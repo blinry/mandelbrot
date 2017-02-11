@@ -13,27 +13,45 @@ f = (cx, cy, zx, zy) ->
 square = (zx, zy) ->
     return [zx*zx-zy*zy, 2*zx*zy]
 
+toWorld = (x, y) ->
+    return [toWorldX(x), toWorldY(y)]
+
+toWorldX = (x) ->
+    (x-canvas.width/2)/scale+centerX
+
+toWorldY = (y) ->
+    (y-canvas.height/2)/scale+centerY
+
+fromWorld = (x, y) ->
+    return [fromWorldX(x), fromWorldY(y)]
+
+fromWorldX = (x) ->
+    (x-centerX)*scale+canvas.width/2
+
+fromWorldY = (y) ->
+    (y-centerY)*scale+canvas.height/2
+
 drawAxes = ->
     bgctx.strokeStyle = "black"
-    bgctx.lineWidth = 0.01
+    bgctx.lineWidth = 1
 
     bgctx.beginPath()
-    bgctx.moveTo(-2, 0)
-    bgctx.lineTo(2, 0)
+    bgctx.moveTo(fromWorldX(-2), fromWorldY(0))
+    bgctx.lineTo(fromWorldX(2), fromWorldY(0))
     bgctx.stroke()
 
     bgctx.beginPath()
-    bgctx.moveTo(0,-2)
-    bgctx.lineTo(0,2)
+    bgctx.moveTo(fromWorldX(0),fromWorldY(-2))
+    bgctx.lineTo(fromWorldX(0),fromWorldY(2))
     bgctx.stroke()
 
     bgctx.beginPath()
-    bgctx.arc(0, 0, 2, 0, 2*Math.PI, false)
+    bgctx.arc(fromWorldX(0), fromWorldY(0), 2*scale, 0, 2*Math.PI, false)
     bgctx.stroke()
 
 drawIteration = ->
     ctx.strokeStyle = "blue"
-    ctx.lineWidth = 0.5/scale
+    ctx.lineWidth = 0.5
 
     zx = 0
     zy = 0
@@ -43,11 +61,11 @@ drawIteration = ->
         [zx2, zy2] = [zx, zy]
         [zx, zy] = f(cx, cy, zx, zy)
         ctx.beginPath()
-        ctx.moveTo(zx2, zy2)
-        ctx.lineTo(zx, zy)
+        ctx.moveTo(fromWorldX(zx2), fromWorldY(zy2))
+        ctx.lineTo(fromWorldX(zx), fromWorldY(zy))
         ctx.stroke()
         ctx.beginPath()
-        ctx.arc(zx, zy, 2/scale, 0, 2*Math.PI, false)
+        ctx.arc(fromWorldX(zx), fromWorldY(zy), 2, 0, 2*Math.PI, false)
         ctx.fillStyle = "blue"
         ctx.fill()
         if Math.sqrt(zx*zx+zy*zy) > 2
@@ -60,40 +78,28 @@ color = (x,y) ->
     zx = 0
     zy = 0
 
-    if Math.sqrt(zx*zx+zy*zy) > 1
-        return "white"
-
-    inSet = true
     for i in [0..50]
         [zx, zy] = f(x, y, zx, zy)
-        if Math.sqrt(zx*zx+zy*zy) > 2
-            inSet = false
-            break
-    if inSet
-        return "black"
-    else
-        return "white"
+        if zx*zx+zy*zy > 4
+            return "hsl(0, 0%, "+i+"%)"
+            #return "white"
+    return "black"
 
 render = ->
-    for x in [0..canvas.width/step]
-        for y in [0..canvas.height/step]
-            xx = (x*step - canvas.width/2)/scale + centerX
-            yy = (y*step - canvas.width/2)/scale + centerY
+    for x in [0..canvas.width] by step
+        for y in [0..canvas.height] by step
+            xx = toWorldX(x)
+            yy = toWorldY(y)
             c = color(xx, yy)
             bgctx.beginPath()
-            bgctx.arc(xx, yy, 0.5/scale, 0, 2*Math.PI, false)
+            bgctx.arc(fromWorldX(xx), fromWorldY(yy), 0.5*step, 0, 2*Math.PI, false)
             bgctx.fillStyle = c
             bgctx.fill()
+    console.log("done")
 
 draw = ->
     ctx.clearRect 0, 0, canvas.width, canvas.height
 
-    ctx.save()
-    ctx.scale(scale, scale)
-    ctx.translate(canvas.width/2.0/scale-centerX, canvas.height/2.0/scale-centerY)
-
-    #drawAxes()
-    #render()
     drawIteration()
 
     #for [x,y] in set
@@ -109,19 +115,11 @@ draw = ->
     #ctx.fillStyle = "red"
     #ctx.fill()
 
-    ctx.restore()
-
 drawBg = ->
     bgctx.clearRect 0, 0, canvas.width, canvas.height
 
-    bgctx.save()
-    bgctx.scale(scale, scale)
-    bgctx.translate(canvas.width/2.0/scale-centerX, canvas.height/2.0/scale-centerY)
-
     drawAxes()
     render()
-
-    bgctx.restore()
 
 drawLoop = ->
     requestAnimationFrame drawLoop
@@ -179,8 +177,8 @@ window.updateCanvas = true
 window.updateBg = true
 
 canvas.onmousemove = (event) =>
-    cx = (event.clientX - canvas.width/2)/scale + centerX
-    cy = (event.clientY - canvas.height/2)/scale + centerY
+    cx = toWorldX(event.clientX)
+    cy = toWorldY(event.clientY)
 
     window.updateCanvas = true
 
