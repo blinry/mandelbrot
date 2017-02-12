@@ -77,25 +77,38 @@ drawIteration = ->
 color = (x,y) ->
     zx = 0
     zy = 0
+    tx = 0
+    ty = 0
 
-    for i in [0..50]
-        [zx, zy] = f(x, y, zx, zy)
-        if zx*zx+zy*zy > 4
-            return "hsl(0, 0%, "+i+"%)"
+    # are we in the cardioid or the period-2 bulb?
+    q = (x-0.25)*(x-0.25) + y*y
+    if q*(q+(x-0.25)) < 0.25*y*y
+        return 0
+
+    for i in [0..scale/4]
+        zy = 2*zx*zy+y
+        zx = tx-ty+x
+        tx = zx*zx
+        ty = zy*zy
+
+        if tx+ty > 4
+            return 255.0*i/50
             #return "white"
-    return "black"
+    return 0
 
 render = ->
-    for x in [0..canvas.width] by step
-        for y in [0..canvas.height] by step
+    offset = 0
+    for y in [0..bgcanvas.height-1]
+        for x in [0..bgcanvas.width-1]
             xx = toWorldX(x)
             yy = toWorldY(y)
             c = color(xx, yy)
-            bgctx.beginPath()
-            bgctx.arc(fromWorldX(xx), fromWorldY(yy), 0.5*step, 0, 2*Math.PI, false)
-            bgctx.fillStyle = c
-            bgctx.fill()
-    console.log("done")
+            data.data[offset++] = c
+            data.data[offset++] = c
+            data.data[offset++] = c
+            data.data[offset++] = 255
+
+    bgctx.putImageData(data, 0, 0)
 
 draw = ->
     ctx.clearRect 0, 0, canvas.width, canvas.height
@@ -171,6 +184,7 @@ ctx = canvas.getContext("2d")
 
 bgcanvas = document.getElementById("bg")
 bgctx = bgcanvas.getContext("2d")
+data = bgctx.getImageData(0, 0, bgcanvas.width, bgcanvas.height)
 
 window.requestAnimationFrame = window.requestAnimationFrame ? window.webkitRequestAnimationFrame ? window.mozRequestAnimationFrame ? window.msRequestAnimationFrame
 window.updateCanvas = true
@@ -187,6 +201,14 @@ canvas.onmousedown = (event) =>
         centerX = cx
         centerY = cy
         scale *= 2
+        window.updateCanvas = true
+        window.updateBg = true
+
+window.onkeydown = (event) =>
+    if event.keyCode == 82 # r
+        scale = 200
+        centerX = 0
+        centerY = 0
         window.updateCanvas = true
         window.updateBg = true
 
