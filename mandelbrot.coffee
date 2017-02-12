@@ -1,3 +1,4 @@
+mode = "mandel"
 set = []
 scale = 200.0
 centerX = 0
@@ -5,10 +6,6 @@ centerY = 0
 step = 1
 cx = 0
 cy = 0
-
-f = (cx, cy, zx, zy) ->
-    # z^2+c
-    return [zx*zx-zy*zy+cx, 2*zx*zy+cy]
 
 square = (zx, zy) ->
     return [zx*zx-zy*zy, 2*zx*zy]
@@ -53,8 +50,12 @@ drawIteration = ->
     ctx.strokeStyle = "blue"
     ctx.lineWidth = 0.5
 
-    zx = 0
-    zy = 0
+    if mode == "julia"
+        zx = cx
+        zy = cy
+    else
+        zx = 0
+        zy = 0
 
     inSet = true
     for i in [0..1000]
@@ -74,25 +75,40 @@ drawIteration = ->
     if inSet
         set.push([cx,cy])
 
-color = (x,y) ->
-    zx = 0
-    zy = 0
-    tx = 0
-    ty = 0
+f = (cx, cy, zx, zy) ->
+    if mode == "julia"
+        #return [zx*zx-zy*zy-0.4, 2*zx*zy+0.6]
+        #return [zx*zx-zy*zy+0.285, 2*zx*zy+0.01]
+        return [zx*zx-zy*zy+(1-1.6180339887), 2*zx*zy]
+    else
+        # z^2+c
+        return [zx*zx-zy*zy+cx, 2*zx*zy+cy]
+        # mandelbar
+        return [zx*zx-zy*zy+cx, 2*zx*zy+cy]
 
-    # are we in the cardioid or the period-2 bulb?
-    q = (x-0.25)*(x-0.25) + y*y
-    if q*(q+(x-0.25)) < 0.25*y*y
-        return 0
+color = (x,y) ->
+    if mode == "julia"
+        zx = x
+        zy = y
+    else
+        zx = 0
+        zy = 0
+
+    if mode == "mandel"
+        # are we in the cardioid or the period-2 bulb?
+        q = (x-0.25)*(x-0.25) + y*y
+        if q*(q+(x-0.25)) < 0.25*y*y
+            return 0
 
     for i in [0..scale/4]
-        zy = 2*zx*zy+y
-        zx = tx-ty+x
-        tx = zx*zx
-        ty = zy*zy
+        [zx, zy] = f(x, y, zx, zy)
+        #zy = 2*zx*zy+y
+        #zx = tx-ty+x
+        #tx = zx*zx
+        #ty = zy*zy
 
-        if tx+ty > 4
-            return 255.0*i/50
+        if zx*zx + zy*zy > 4
+            return 255.0*i/(scale/16)
             #return "white"
     return 0
 
