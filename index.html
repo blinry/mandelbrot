@@ -7,22 +7,49 @@
             margin: 0;
             padding: 0;
         }
-        body {
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            background-size: 100% 100%;
+
+        h1, h2, p {
+            margin-bottom: 1em;
+            margin-top: 1em;
         }
-        #id, #canvas {
-            position: fixed;
-            left: 0;
+
+        body {
+            max-width: 40em;
+            margin: 1em;
+        }
+        .example {
+            background: lightyellow;
+            padding: 1em;
+        }
+        .layers {
+            position: relative;
+            width: 400;
+            height: 400;
+        }
+        canvas {
+            position: absolute;
             top: 0;
+            left: 0;
         }
         </style>
     </head>
     <body>
-        <canvas id="bg" width="800" height="800"></canvas>
-        <canvas id="canvas" width="800" height="800"></canvas>
+        <h1>A Hitchhiker's Guide to the Mandelbrot Set</h1>
+
+        <p>Lorem ipsum!</p>
+
+        <div class="example" id="plain">
+            <p>Click to zoom</p>
+            <button type="button" id="plain-reset">Reset</button>
+        </div>
+
+        <p>Blaha!</p>
+
+        <div class="example" id="exp">
+            <p>Click to zoom</p>
+            <button type="button" id="exp-reset">Reset</button>
+            <input type="range" id="exp-exp" min="0" max="5" value="2" step="0.1">
+        </div>
     </body>
 </html>
 
