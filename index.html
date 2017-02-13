@@ -15,7 +15,7 @@
 
         body {
             max-width: 40em;
-            margin: 1em;
+            margin: auto;
         }
         .example {
             background: lightyellow;
@@ -36,14 +36,72 @@
     <body>
         <h1>A Hitchhiker's Guide to the Mandelbrot Set</h1>
 
-        <p>Lorem ipsum!</p>
+        <p>Maybe you've seen an image of the Mandelbrot Set before. It's trippy, it's wonderous, it's beautiful. Have a look:</p>
 
         <div class="example" id="plain">
-            <p>Click to zoom</p>
-            <button type="button" id="plain-reset">Reset</button>
+            <p>Click to zoom. <button type="button" id="plain-reset">Reset</button></p>
         </div>
 
-        <p>Blaha!</p>
+        <p>So, you just zoomed in <span id="zoomcount">0</span> times. <span id="zoompercent">100</span>% of all people doing that would end up in the same spot as you. This means it's very, very probable that you just visited a part of the Mandelbrot set which no other human being has seen so far!</p>
+
+        <p>But what does it mean? Why is it the way it is?</p>
+
+        <p>You remember the good old number line?</p>
+
+        <div class="example" id="real">
+            <p>Move your mouse.</p>
+        </div>
+
+        <p>Yeah, boring. I know. At some point people probably thought "Why restrict a number to be fixed on a single line? Let's allow it to go *everywhere*! Like this:</p>
+
+        <div class="example" id="complex">
+            <p>Move your mouse. Again!</p>
+        </div>
+
+        <p>Numbers like these are called... *complex numbers*! AAAAAAAAHHHH! Wait, don't be scared! They are not really scary.</p>
+
+        <p>This is what happens when you multiply a complex number by itself:</p>
+
+        <div class="example" id="square">
+            <p>Your mouse. Move it.</p>
+        </div>
+
+        <p>Bla</p>
+
+        <div class="example" id="step">
+            <p>?</p>
+        </div>
+
+        <p>Bla</p>
+
+        <div class="example" id="iteration">
+            <p>?</p>
+        </div>
+
+        <p>You saw that for some starting points, the blue path ran away, and for others, it swirled around and stayed on-screen. In the next demo, you can click and scribble. If the path at the current mouse position leaves the screen, we will color the starting point white, otherwise black.</p>
+
+        <div class="example" id="scribble">
+            <p>?</p>
+            <button type="button" id="scribble-reset">Reset</button>
+        </div>
+
+        <p>Bla</p>
+
+        <div class="example" id="zoomiter">
+            <p>?</p>
+            <button type="button" id="zoomiter-reset">Reset</button>
+        </div>
+
+        <p>Bla</p>
+
+
+
+
+
+
+
+
+
 
         <div class="example" id="exp">
             <p>Click to zoom</p>

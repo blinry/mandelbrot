@@ -9,11 +9,13 @@ class Complex
         else if exp == 3
             new Complex(@r*@r*@r-3*@r*@i*@i, 3*@r*@r*@i-@i*@i*@i)
         else
-            tmp = Math.pow(@r*@r+@i*@i, exp/2.0)
+            tmp = Math.pow(@r*@r+@i*@i, exp/2)
             arg = Math.atan2(@i, @r)
             new Complex(tmp*Math.cos(exp*arg), tmp*Math.sin(exp*arg))
     add: (complex) ->
         new Complex(@r+complex.r, @i+complex.i)
+    div: (scalar) ->
+        new Complex(@r/scalar, @i/scalar)
 
 class Mandelbrot
     constructor: (@exp=2) ->
@@ -23,11 +25,10 @@ class Mandelbrot
     color: (c) ->
         z = new Complex(0,0)
 
-        if false#mode == "mandel"
-            # are we in the cardioid or the period-2 bulb?
-            q = (c.r-0.25)*(c.r-0.25) + c.i*c.i
-            if q*(q+(c.r-0.25)) < 0.25*c.i*c.i
-                return 0
+        # are we in the cardioid or the period-2 bulb?
+        q = (c.r-0.25)*(c.r-0.25) + c.i*c.i
+        if q*(q+(c.r-0.25)) < 0.25*c.i*c.i
+            return 0
 
         for i in [0..100]
             z = @step(z, c)
@@ -38,7 +39,7 @@ class Mandelbrot
             #ty = zy*zy
 
             if z.r*z.r+z.i*z.i > 4
-                return 255.0*i/(100)
+                return 255*i/(100)
                 #return "white"
         return 0
 
@@ -70,22 +71,233 @@ class Canvas
 
         @fractal = new Mandelbrot()
 
+        @click = =>
+
+        @move = =>
+
         @fgCanvas.onmousedown = (event) =>
             if event.which == 1 # left
                 rect = @fgCanvas.getBoundingClientRect()
-                c = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
-                @click(c)
+                @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
+                @click(@mouse)
 
         @fgCanvas.onmousemove = (event) =>
-            rect = @bgCanvas.getBoundingClientRect()
+            rect = @fgCanvas.getBoundingClientRect()
             @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
-            @drawIteration()
+            @move(@mouse)
+
+        #@fgCanvas.onmousemove = (event) =>
+        #    rect = @bgCanvas.getBoundingClientRect()
+        #    @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
+        #    @drawIteration()
     toWorld: (x, y) ->
         r = (x-@width/2)/@zoom+@center.r
-        i = (y-@height/2)/@zoom+@center.i
+        i = -(y-@height/2)/@zoom+@center.i
         new Complex(r, i)
     fromWorld: (c) ->
-        return [(c.r-@center.r)*@zoom+@width/2, (c.i-@center.i)*@zoom+@height/2]
+        x = (c.r-@center.r)*@zoom+@width/2
+        y = -(c.i-@center.i)*@zoom+@height/2
+        return [x, y]
+    zoomIn: (c) ->
+        @zoom *= 2
+        @center = @center.add(c).div(2)
+    addPoint: (c) ->
+        for dx in [-10..10]
+            for dy in [-10..10]
+                [x, y] = @fromWorld(c)
+                xx = x+dx
+                yy = y+dy
+                xx = Math.floor(xx)
+                yy = Math.floor(yy)
+                offset = (@width*yy+xx)*4
+                cc = @toWorld(xx, yy)
+                col = @fractal.color(cc)
+                if col != 0 or cc.r*cc.r+cc.i*cc.i > 4
+                    col = 254
+                @data.data[offset++] = col
+                @data.data[offset++] = col
+                @data.data[offset++] = col
+                @data.data[offset++] = 255
+        @bg.putImageData(@data, 0, 0)
+    clearBg: ->
+        @bg.clearRect 0, 0, @width, @height
+        @data = @bg.getImageData(0, 0, @width, @height)
+    drawReal: ->
+        @fg.clearRect 0, 0, @width, @height
+
+        [ox, oy] = @fromWorld(new Complex(0,0))
+        [x1, y1] = @fromWorld(new Complex(-2,0))
+        [x2, y2] = @fromWorld(new Complex(2,0))
+        [mx, my] = @fromWorld(@mouse)
+
+        @fg.lineWidth = 1
+        @fg.strokeStyle = "black"
+
+        @fg.beginPath()
+        @fg.moveTo(x1, oy)
+        @fg.lineTo(x2, oy)
+        @fg.stroke()
+
+        @fg.lineWidth = 5
+        @fg.strokeStyle = "red"
+
+        @fg.beginPath()
+        @fg.moveTo(ox, oy)
+        @fg.lineTo(mx, oy)
+        @fg.stroke()
+
+        @fg.textAlign = "center"
+        @fg.font = "20px sans-serif"
+        @fg.fillStyle = "red"
+        @fg.fillText(@mouse.r.toFixed(2), (mx+ox)/2, oy-5)
+    drawComplex: ->
+        @fg.clearRect 0, 0, @width, @height
+
+        [ox, oy] = @fromWorld(new Complex(0,0))
+        [mx, my] = @fromWorld(@mouse)
+
+        @drawAxes()
+
+        @fg.lineWidth = 5
+
+        @fg.strokeStyle = "black"
+        @fg.beginPath()
+        @fg.moveTo(ox, oy)
+        @fg.lineTo(mx, my)
+        @fg.stroke()
+
+        @fg.lineWidth = 2
+        @fg.strokeStyle = "red"
+        @fg.setLineDash([5, 5])
+
+        @fg.beginPath()
+        @fg.moveTo(ox, my)
+        @fg.lineTo(mx, my)
+        @fg.stroke()
+
+        @fg.strokeStyle = "blue"
+
+        @fg.beginPath()
+        @fg.moveTo(mx, oy)
+        @fg.lineTo(mx, my)
+        @fg.stroke()
+
+        @fg.setLineDash([])
+
+        @fg.textAlign = "center"
+        @fg.font = "20px sans-serif"
+        text = @mouse.r
+        @fg.fillStyle = "red"
+        @fg.fillText(@mouse.r.toFixed(2), (mx+ox)/2, my-5)
+
+        @fg.fillStyle = "blue"
+        @fg.textAlign = "left"
+        @fg.fillText(@mouse.i.toFixed(2)+" i", mx+5, (my+ox)/2+5)
+
+        #@fg.fillText(text, mx+5, my-5)
+        #@fg.fillStyle = "black"
+        #offset = @fg.measureText(text).width
+        #if @mouse.i >= 0
+        #    text = "+"
+        #else
+        #    text = "-"
+        #@fg.fillText(text, mx+5+offset, my-5)
+        #@fg.fillStyle = "blue"
+        #offset2 = @fg.measureText(text).width
+        #text = @mouse.i+"i"
+        #@fg.fillText(text, mx+5+offset+offset2, my-5)
+    drawSquare: ->
+        @fg.clearRect 0, 0, @width, @height
+
+        [ox, oy] = @fromWorld(new Complex(0,0))
+        [mx, my] = @fromWorld(@mouse)
+        [mx2, my2] = @fromWorld(@mouse.pow(2))
+
+        @drawAxes()
+
+        @fg.lineWidth = 5
+        @fg.strokeStyle = "black"
+
+        @fg.beginPath()
+        @fg.moveTo(ox, ox)
+        @fg.lineTo(mx, my)
+        @fg.stroke()
+
+        @fg.beginPath()
+        @fg.moveTo(ox, ox)
+        @fg.lineTo(mx2, my2)
+        @fg.stroke()
+
+        @fg.textAlign = "left"
+        @fg.font = "20px sans-serif"
+        @fg.fillStyle = "black"
+        @fg.fillText("c", mx+5, my-5)
+
+        @fg.textAlign = "left"
+        @fg.font = "20px sans-serif"
+        @fg.fillStyle = "black"
+        @fg.fillText("c^2", mx2+5, my2-5)
+    drawStep: ->
+        @fg.clearRect 0, 0, @width, @height
+
+        @drawAxes()
+        [ox, oy] = @fromWorld(new Complex(0,0))
+
+        [mx, my] = @fromWorld(@mouse)
+        [mx2, my2] = @fromWorld(@mouse.pow(2))
+        [mx3, my3] = @fromWorld(@mouse.pow(2).add(@mouse))
+
+        @fg.lineWidth = 5
+        @fg.strokeStyle = "black"
+
+        @fg.beginPath()
+        @fg.moveTo(ox, ox)
+        @fg.lineTo(mx, my)
+        @fg.stroke()
+
+        @fg.beginPath()
+        @fg.moveTo(ox, ox)
+        @fg.lineTo(mx2, my2)
+        @fg.stroke()
+
+        @fg.beginPath()
+        @fg.moveTo(mx2, my2)
+        @fg.lineTo(mx3, my3)
+        @fg.stroke()
+
+        @fg.textAlign = "left"
+        @fg.font = "20px sans-serif"
+        @fg.fillStyle = "black"
+        @fg.fillText("c", mx+5, my-5)
+
+        @fg.textAlign = "left"
+        @fg.font = "20px sans-serif"
+        @fg.fillStyle = "black"
+        @fg.fillText("c^2", mx2+5, my2-5)
+
+        @fg.textAlign = "left"
+        @fg.font = "20px sans-serif"
+        @fg.fillStyle = "black"
+        @fg.fillText("c^2+c", mx3+5, my3-5)
+
+    drawAxes: ->
+        [ox, oy] = @fromWorld(new Complex(0,0))
+        [x1, y1] = @fromWorld(new Complex(-2,-2))
+        [x2, y2] = @fromWorld(new Complex(2,2))
+
+        @fg.lineWidth = 1
+        @fg.strokeStyle = "black"
+
+        @fg.beginPath()
+        @fg.moveTo(x1, oy)
+        @fg.lineTo(x2, oy)
+        @fg.stroke()
+
+        @fg.beginPath()
+        @fg.moveTo(ox, y1)
+        @fg.lineTo(ox, y2)
+        @fg.stroke()
+
     draw: ->
         @drawFractal()
         @drawIteration()
@@ -103,6 +315,9 @@ class Canvas
         @bg.putImageData(@data, 0, 0)
     drawIteration: ->
         @fg.clearRect 0, 0, @width, @height
+
+        @drawAxes()
+
         @fg.strokeStyle = "blue"
         @fg.lineWidth = 0.5
         @fg.fillStyle = "blue"
@@ -128,37 +343,6 @@ class Canvas
 
             z = z2
 
-toWorld = (x, y) ->
-    return [toWorldX(x), toWorldY(y)]
-
-toWorldX = (x) ->
-
-toWorldY = (y) ->
-
-fromWorld = (x, y) ->
-    return [fromWorldX(x), fromWorldY(y)]
-
-fromWorldX = (x) ->
-
-#drawAxes = ->
-#    bgctx.strokeStyle = "black"
-#    bgctx.lineWidth = 1
-#
-#    bgctx.beginPath()
-#    bgctx.moveTo(fromWorldX(-2), fromWorldY(0))
-#    bgctx.lineTo(fromWorldX(2), fromWorldY(0))
-#    bgctx.stroke()
-#
-#    bgctx.beginPath()
-#    bgctx.moveTo(fromWorldX(0),fromWorldY(-2))
-#    bgctx.lineTo(fromWorldX(0),fromWorldY(2))
-#    bgctx.stroke()
-#
-#    bgctx.beginPath()
-#    bgctx.arc(fromWorldX(0), fromWorldY(0), 2*scale, 0, 2*Math.PI, false)
-#    bgctx.stroke()
-
-
 f = (cx, cy, zx, zy) ->
     if mode == "julia"
         #return [zx*zx-zy*zy-0.4, 2*zx*zy+0.6]
@@ -170,133 +354,33 @@ f = (cx, cy, zx, zy) ->
         # mandelbar
         return [zx*zx-zy*zy+cx, 2*zx*zy+cy]
 
-render = ->
-
-draw = ->
-    ctx.clearRect 0, 0, canvas.width, canvas.height
-
-    drawIteration()
-
-    #for [x,y] in set
-    #    ctx.beginPath()
-    #    ctx.arc(x, y, 0.02, 0, 2*Math.PI, false)
-    #    ctx.fillStyle = "green"
-    #    ctx.fill()
-
-
-    #[tx, ty] = square(cx, cy)
-    #ctx.beginPath()
-    #ctx.arc(tx, ty, 0.02, 0, 2*Math.PI, false)
-    #ctx.fillStyle = "red"
-    #ctx.fill()
-
-drawBg = ->
-    bgctx.clearRect 0, 0, canvas.width, canvas.height
-
-    drawAxes()
-    render()
-
-drawLoop = ->
-    requestAnimationFrame drawLoop
-    if window.updateBg
-        drawBg()
-        window.updateBg = false
-    if window.updateCanvas
-        draw()
-        window.updateCanvas = false
-
-Array::add = (vector) ->
-    [
-        @[0] + vector[0]
-        @[1] + vector[1]
-    ]
-
-Array::sub = (vector) ->
-    [
-        @[0] - (vector[0])
-        @[1] - (vector[1])
-    ]
-
-Array::mul = (scalar) ->
-    [
-        @[0] * scalar
-        @[1] * scalar
-    ]
-
-Array::div = (scalar) ->
-    [
-        @[0] / scalar
-        @[1] / scalar
-    ]
-
-Array::len = -> Math.sqrt @[0] * @[0] + @[1] * @[1]
-
-Array::nor = -> @mul 1 / @len()
-
-Array::sum = -> @reduce ((a, b) -> a + b.a), 0
-
-Array::rot = (theta) ->
-    [
-        @[0] * Math.cos(theta) - (@[1] * Math.sin(theta))
-        @[0] * Math.sin(theta) + @[1] * Math.cos(theta)
-    ]
-
-#window.requestAnimationFrame = window.requestAnimationFrame ? window.webkitRequestAnimationFrame ? window.mozRequestAnimationFrame ? window.msRequestAnimationFrame
-#window.updateCanvas = true
-#window.updateBg = true
-#
-#canvas.onmousemove = (event) =>
-#    cx = toWorldX(event.clientX)
-#    cy = toWorldY(event.clientY)
-#
-#    window.updateCanvas = true
-#
-#canvas.onmousedown = (event) =>
-#    if event.which == 1 # left
-#        centerX = cx
-#        centerY = cy
-#        scale *= 2
-#        window.updateCanvas = true
-#        window.updateBg = true
-#
-#window.onkeydown = (event) =>
-#    if event.keyCode == 82 # r
-#        scale = 200
-#        centerX = 0
-#        centerY = 0
-#        window.updateCanvas = true
-#        window.updateBg = true
-
-#window.onresize = (event) =>
-#    canvas.width = window.innerWidth
-#    canvas.height = window.innerHeight
-#    window.updateCanvas = true
-
-#window.onresize()
-#drawLoop()
-
 # plain
+zoomCount = 0
+
 plain = new Canvas("plain")
-plain.draw()
+plain.drawFractal()
+zc = document.getElementById("zoomcount")
+zp = document.getElementById("zoompercent")
 
 plain.click = (c) =>
-    plain.center = c
-    plain.zoom *= 2
-    plain.draw()
+    plain.zoomIn(c)
+    zoomCount++
+    zc.innerHTML = zoomCount
+    zp.innerHTML = Math.pow(0.25, zoomCount)*100
+    plain.drawFractal()
 
 document.getElementById("plain-reset").onclick = =>
     plain.zoom = plain.width/4
     plain.center = new Complex(0, 0)
-    plain.draw()
+    zoomCount = 0
+    plain.drawFractal()
 
 # exp
-
 exp = new Canvas("exp")
 exp.draw()
 
 exp.click = (c) =>
-    exp.center = c
-    exp.zoom *= 2
+    exp.zoomIn(c)
     exp.draw()
 
 document.getElementById("exp-reset").onclick = =>
@@ -306,6 +390,59 @@ document.getElementById("exp-reset").onclick = =>
 
 expExp = document.getElementById("exp-exp")
 expExp.oninput = =>
-    console.log(expExp.value)
     exp.fractal.exp = expExp.value
     exp.draw()
+
+# real
+real = new Canvas("real")
+real.drawReal()
+real.move = (c) =>
+    real.drawReal()
+
+# complex
+complex = new Canvas("complex")
+complex.drawComplex()
+complex.move = (c) =>
+    complex.drawComplex()
+
+# square
+square = new Canvas("square")
+square.drawSquare()
+square.move = (c) =>
+    square.drawSquare()
+
+# step
+step = new Canvas("step")
+step.drawStep()
+step.move = (c) =>
+    step.drawStep()
+
+# iteration
+iteration = new Canvas("iteration")
+iteration.drawIteration()
+iteration.move = (c) =>
+    iteration.drawIteration()
+
+# scribble
+scribble = new Canvas("scribble")
+scribble.drawIteration()
+scribble.move = (c) =>
+    scribble.addPoint(c)
+    scribble.drawIteration()
+document.getElementById("scribble-reset").onclick = =>
+    scribble.clearBg()
+
+# zoomiter
+zoomiter = new Canvas("zoomiter")
+zoomiter.drawFractal()
+zoomiter.drawIteration()
+zoomiter.click = (c) =>
+    zoomiter.zoomIn(c)
+    zoomiter.drawFractal()
+    zoomiter.drawIteration()
+zoomiter.move = (c) =>
+    zoomiter.drawIteration()
+document.getElementById("zoomiter-reset").onclick = =>
+    zoomiter.zoom = zoomiter.width/4
+    zoomiter.center = new Complex(0, 0)
+    zoomiter.draw()
