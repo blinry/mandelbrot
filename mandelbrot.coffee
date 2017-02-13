@@ -69,7 +69,7 @@ class Mandelbrot
                 else if @scheme == "bw"
                     return new Color(0, 80, 60, 1)
                 else if @scheme == "zebra"
-                    return new Color(0, 0, i.mod(2)*100, 1)
+                    return new Color(i.mod(2)*180+90, 100, 40, 1)
                 #return "white"
         return new Color(0, 0, 0, 1)
 
@@ -190,7 +190,7 @@ class Canvas
                     yy = Math.floor(yy)
                     offset = (@width*yy+xx)*4
                     cc = @toWorld(xx, yy)
-                    col = @fractal.color(cc, 50)
+                    col = @fractal.color(cc, 20)
                     [r,g,b,a] = col.rgba()
                     @data.data[offset++] = r
                     @data.data[offset++] = g
@@ -383,7 +383,7 @@ class Canvas
         @fg.stroke()
     drawBorder: ->
         @fg.lineWidth = 10
-        @fg.strokeStyle = @fractal.color(@mouse, 50).string()
+        @fg.strokeStyle = @fractal.color(@mouse, 20).string()
         [x1, y1] = @fromWorld(new Complex(-2,-2))
         [x2, y2] = @fromWorld(new Complex(2,2))
 
@@ -403,7 +403,7 @@ class Canvas
         for y in [0..@height-1]
             for x in [0..@width-1]
                 c = @toWorld(x, y)
-                [r,g,b,a] = @fractal.color(c, 50*Math.log2(@zoom)).rgba()
+                [r,g,b,a] = @fractal.color(c, 20*Math.log2(@zoom)).rgba()
                 @data.data[offset++] = r
                 @data.data[offset++] = g
                 @data.data[offset++] = b
@@ -422,7 +422,7 @@ class Canvas
         z = new Complex(0, 0)
         c = @mouse
 
-        for i in [0..1000]
+        for i in [0..500]
             [x1, y1] = @fromWorld(z)
             z2 = @fractal.step(z, c)
             [x2, y2] = @fromWorld(z2)
