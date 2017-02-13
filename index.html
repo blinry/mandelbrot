@@ -21,6 +21,10 @@
             background: lightyellow;
             padding: 1em;
         }
+        .example p, .example button {
+            font-weight: bold;
+            font-size: 120%;
+        }
         .layers {
             position: relative;
             width: 400;
@@ -36,63 +40,74 @@
     <body>
         <h1>A Hitchhiker's Guide to the Mandelbrot Set</h1>
 
-        <p>Maybe you've seen an image of the Mandelbrot Set before. It's trippy, it's wonderous, it's beautiful. Have a look:</p>
+        <p>Maybe you've seen an image of the Mandelbrot Set before. It's trippy, it's wonderous, it's beautiful. Here it is, have a look:</p>
 
         <div class="example" id="plain">
             <p>Click to zoom. <button type="button" id="plain-reset">Reset</button></p>
         </div>
 
-        <p>So, you just zoomed in <span id="zoomcount">0</span> times. <span id="zoompercent">100</span>% of all people doing that would end up in the same spot as you. This means it's very, very probable that you just visited a part of the Mandelbrot set which no other human being has seen so far!</p>
+        <p>So, you just zoomed in <span id="zoomcount"></span>. If every human on earth did that, about <span id="zoompersons"></span> of them would end up at your location. <span id="zoomremark"></span></p>
 
-        <p>But what does it mean? Why is it the way it is?</p>
+        <p>But what does this image mean? How is it constructed?</p>
 
-        <p>You remember the good old number line?</p>
+        <p>To explain, let's have a look at good ol' number line:</p>
 
         <div class="example" id="real">
             <p>Move your mouse.</p>
         </div>
 
-        <p>Yeah, boring. I know. At some point people probably thought "Why restrict a number to be fixed on a single line? Let's allow it to go *everywhere*! Like this:</p>
+        <p>Boring, right? Yeah. But what if we allow our numbers to go *up*, as well?</p>
 
         <div class="example" id="complex">
             <p>Move your mouse. Again!</p>
         </div>
 
-        <p>Numbers like these are called... *complex numbers*! AAAAAAAAHHHH! Wait, don't be scared! They are not really scary.</p>
+        <p>Now the number you select has a red, horizontal component, like before, but also a blue, vertical one. Numbers like these are called... *complex numbers*! AAAAAAAAHHHH! Wait, let me tell you a secret: *whisper* They are not totally not scary at all! When adding two of them, you just put their arrows together and BAM! You get their sum! (DEMO HERE)</p>
 
-        <p>This is what happens when you multiply a complex number by itself:</p>
+        <p>The only thing that's a little weird about them is how multiplication works. You know how you can *square* a normal number? Multiplying it by itself? Like, saying 3^2, and it means 3*3? Well, you can do the same thing to complex numbers. Have a look:</p>
 
         <div class="example" id="square">
             <p>Your mouse. Move it.</p>
         </div>
 
-        <p>Bla</p>
+        <p>Except that this looks like a broken clock with fat, ugly handlebars, what happens? (To get the square of a complex number, you double its angle to the x-axis and square its length. ADD THESE MEASURES TO THE DEMO)</p>
+
+        <p>We're ready for the last step. We take our little number c and square, like before, and then, we add c to the result. The result is the number c^2+c:</p>
 
         <div class="example" id="step">
-            <p>?</p>
+            <p>Your mouse move you must.</p>
         </div>
 
-        <p>Bla</p>
+        <p>And NOW the exciting stuff happens! What if we repeat this process? After calculating our c^2+c, we square it *again*, and add c *again*? (PROBABLY NEEDS AN INBETWEEN DEMO) And do this forever and ever and ever? Look:</p>
 
         <div class="example" id="iteration">
-            <p>?</p>
+            <p>Move ya mouse, yo! Can you find a spiral? A star? A triangle?</p>
         </div>
 
-        <p>You saw that for some starting points, the blue path ran away, and for others, it swirled around and stayed on-screen. In the next demo, you can click and scribble. If the path at the current mouse position leaves the screen, we will color the starting point white, otherwise black.</p>
+        <p>Whaaaat. Crazy patterns everywhere!</p>
+        <p>If you play with the demo again, you can see that for some starting points, the blue path runs away, off-screen. And for others, it swirled around and stayed on-screen. In the next demo, you can click and scribble. If the path at the current mouse position leaves the screen, we will color the starting point red, otherwise black.</p>
 
         <div class="example" id="scribble">
-            <p>?</p>
-            <button type="button" id="scribble-reset">Reset</button>
+            <p>Scribble, like tracing a coin behind a sheet of paper. <button type="button" id="scribble-reset">Reset</button></p>
         </div>
 
-        <p>Bla</p>
+        <p>Why, HELL~O! You drew yourself a teeny tiny Mandelbrot set!</p>
+
+        <p>Let's add more color. So far, we only used red (for when the path leaves) and black (for when the path stays). Let's say, when the path leaves after one step, we'll color that pixel X. When it leaves after two steps, we'll color it X. And so on. (ADD VISUALIZATION OF THE PALETTE) Try it:</p>
+
+        <div class="example" id="color">
+            <p>Scribble. <button type="button" id="color-reset">Reset</button></p>
+        </div>
+
+        <p>And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.</p>
+
+        <p>Here's another demo which does all the drawing for you, and where you can zoom in:</p>
 
         <div class="example" id="zoomiter">
-            <p>?</p>
-            <button type="button" id="zoomiter-reset">Reset</button>
+            <p>Click to zoom. <button type="button" id="zoomiter-reset">Reset</button></p>
         </div>
 
-        <p>Bla</p>
+        <p>(HERE BE DRAGONS) Lorem ipsum Mandelbrot sit amet!</p>
 
 
 
