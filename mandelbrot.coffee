@@ -70,6 +70,8 @@ class Mandelbrot
                     return new Color(0, 80, 60, 1)
                 else if @scheme == "zebra"
                     return new Color(i.mod(2)*180+90, 100, 40, 1)
+                else if @scheme == "colordemo"
+                    return new Color((i*10).mod(360), 80, 60, 1)
                 #return "white"
         return new Color(0, 0, 0, 1)
 
@@ -179,10 +181,10 @@ class Canvas
     zoomIn: (c) ->
         @zoom *= 2
         @center = @center.add(c).div(2)
-    addPoint: (c) ->
+    addPoint: (c, size) ->
         if @mousedown
-            for dx in [-5..5]
-                for dy in [-5..5]
+            for dx in [-size..size]
+                for dy in [-size..size]
                     [x, y] = @fromWorld(c)
                     xx = x+dx
                     yy = y+dy
@@ -552,7 +554,7 @@ scribble.fractal.scheme = "bw"
 scribble.drawIteration()
 scribble.drawBorder()
 scribble.move = (c) =>
-    scribble.addPoint(c)
+    scribble.addPoint(c, 5)
     scribble.drawIteration()
     scribble.drawBorder()
 document.getElementById("scribble-reset").onclick = =>
@@ -560,11 +562,11 @@ document.getElementById("scribble-reset").onclick = =>
 
 # color
 color = new Canvas("color")
-color.fractal.scheme = "rainbow"
+color.fractal.scheme = "colordemo"
 color.drawIteration()
 color.drawBorder()
 color.move = (c) =>
-    color.addPoint(c)
+    color.addPoint(c, 10)
     color.drawIteration()
     color.drawBorder()
 document.getElementById("color-reset").onclick = =>
