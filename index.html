@@ -101,15 +101,22 @@
 
         <p>And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.</p>
 
-        <p>Here's another demo which does all the drawing for you, and where you can zoom in:</p>
+        <p>Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.</p>
 
         <div class="example" id="zoomiter">
-            <p>Click to zoom. <button type="button" id="zoomiter-reset">Reset</button></p>
+            <p>Click to zoom. Middle-click to zoom out. <button type="button" id="zoomiter-reset">Reset</button></p>
         </div>
 
+        <p>Some fun things you can try:</p>
+
+        <ul>
+            <li>What happens to the path at the centers of the outer "bulbs"?</li>
+            <li>Can you find out which period numbers are connected to each bulb? Do you see a relation to the "antennas" extending outward from that bulb?</li>
+            <li>Zoom in on one of the bulbs. What happens to the path at the centers of its sub-bulbs?</li>
+            <li>What is the period of the bulbs going "outward"? What happens if you follow a number of them?</li>
+        </ul>
+
         <p>(HERE BE DRAGONS) Lorem ipsum Mandelbrot sit amet!</p>
-
-
 
 
 
@@ -121,7 +128,7 @@
         <div class="example" id="exp">
             <p>Click to zoom</p>
             <button type="button" id="exp-reset">Reset</button>
-            <input type="range" id="exp-exp" min="0" max="5" value="2" step="0.1">
+            <span>f_c(z) = z^n+c, where n =</span> <span>0</span><input type="range" id="exp-exp" min="0" max="5" value="2" step="0.1"><span>5</span>
         </div>
     </body>
 </html>

@@ -36,12 +36,16 @@ class Complex
             new Complex(tmp*Math.cos(exp*arg), tmp*Math.sin(exp*arg))
     add: (complex) ->
         new Complex(@r+complex.r, @i+complex.i)
+    sub: (complex) ->
+        new Complex(@r-complex.r, @i-complex.i)
     div: (scalar) ->
         new Complex(@r/scalar, @i/scalar)
+    mul: (scalar) ->
+        new Complex(@r*scalar, @i*scalar)
 
 class Mandelbrot
-    constructor: (@exp=2) ->
-        @scheme = "rainbow"
+    constructor: (@exp=2, @palette=(new Palette("rainbow"))) ->
+        # nop
     step: (z, c) ->
         z.pow(@exp).add(c)
     color: (c, steps=3) ->
@@ -62,17 +66,7 @@ class Mandelbrot
             #ty = zy*zy
 
             if z.r*z.r+z.i*z.i > 4
-                if @scheme == "gray"
-                    return new Color(0, 0, i, 1)
-                else if @scheme == "rainbow"
-                    return new Color((i).mod(360), 80, 60, 1)
-                else if @scheme == "bw"
-                    return new Color(0, 80, 60, 1)
-                else if @scheme == "zebra"
-                    return new Color(i.mod(2)*180+90, 100, 40, 1)
-                else if @scheme == "colordemo"
-                    return new Color((i*10).mod(360), 80, 60, 1)
-                #return "white"
+                return @palette.color(i)
         return new Color(0, 0, 0, 1)
 
 class Color
@@ -93,19 +87,6 @@ class Color
             g = @hue2rgb(p, q, h)
             b = @hue2rgb(p, q, h - 1/3)
         return [Math.round(rr * 255), Math.round(g * 255), Math.round(b * 255), Math.round(@a * 255)]
-        #"#"+("0"+Math.round(rr * 255).toString(16)).slice(-2)+("0"+Math.round(g * 255).toString(16)).slice(-2)+("0"+Math.round(b * 255).toString(16)).slice(-2)
-    #hue2rgb: (p, q, t) ->
-    #    if t < 0
-    #        t += 1
-    #    if t > 1
-    #        t -= 1
-    #    if t < 1/6
-    #        return p + (q - p) * 6 * t
-    #    if t < 1/2
-    #        return q
-    #    if t < 2/3
-    #        return p + (q - p) * (2/3 - t) * 6
-    #    return p
     hue2rgb: (p, q, t) ->
         t += 1 if t < 0
         t -= 1 if t > 1
@@ -115,6 +96,21 @@ class Color
         return p
 
     gray: -> new Color @h, 0, @l, @a
+
+class Palette
+    constructor: (@name="rainbow") ->
+        # nop
+    color: (i) ->
+        if @name == "gray"
+            return new Color(0, 0, i, 1)
+        else if @name == "rainbow"
+            return new Color((i).mod(360), 80, 60, 1)
+        else if @name == "bw"
+            return new Color(0, 80, 60, 1)
+        else if @name == "zebra"
+            return new Color(i.mod(2)*180+90, 100, 40, 1)
+        else if @name == "colordemo"
+            return new Color((i*10).mod(360), 80, 60, 1)
 
 class Canvas
     constructor: (id) ->
@@ -146,6 +142,8 @@ class Canvas
 
         @click = =>
 
+        @middleClick = =>
+
         @move = =>
 
         @mousedown = false
@@ -155,6 +153,10 @@ class Canvas
                 rect = @fgCanvas.getBoundingClientRect()
                 @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
                 @click(@mouse)
+            else if event.which == 2 # middle
+                rect = @fgCanvas.getBoundingClientRect()
+                @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
+                @middleClick(@mouse)
             return false
 
         @fgCanvas.onmouseup = (event) =>
@@ -181,6 +183,11 @@ class Canvas
     zoomIn: (c) ->
         @zoom *= 2
         @center = @center.add(c).div(2)
+    zoomOut: (c) ->
+        @zoom /= 2
+        # c2 = (c1+m)/2
+        # c1 = c2*2-m
+        @center = @center.mul(2).sub(c)
     addPoint: (c, size) ->
         if @mousedown
             for dx in [-size..size]
@@ -395,6 +402,7 @@ class Canvas
         @fg.lineTo(x2, y2)
         @fg.lineTo(x1, y2)
         @fg.lineTo(x1, y1)
+        #@fg.arc(ox, oy, @zoom*2+@fg.lineWidth/2, 0, 2*Math.PI, false)
         @fg.stroke()
 
     draw: ->
@@ -429,6 +437,7 @@ class Canvas
             z2 = @fractal.step(z, c)
             [x2, y2] = @fromWorld(z2)
 
+            #@fg.strokeStyle = @fractal.palette.color(i).string()
             @fg.beginPath()
             @fg.moveTo(x1, y1)
             @fg.lineTo(x2, y2)
@@ -437,7 +446,7 @@ class Canvas
             @fg.arc(x2, y2, 2, 0, 2*Math.PI, false)
             @fg.fill()
 
-            if z2.r*z2.r+z2.i*z2.i > 4
+            if z2.r*z2.r > 4 or z2.i*z2.i > 4
                 break
 
             z = z2
@@ -550,7 +559,7 @@ iteration.move = (c) =>
 
 # scribble
 scribble = new Canvas("scribble")
-scribble.fractal.scheme = "bw"
+scribble.fractal.palette = new Palette("bw")
 scribble.drawIteration()
 scribble.drawBorder()
 scribble.move = (c) =>
@@ -562,7 +571,7 @@ document.getElementById("scribble-reset").onclick = =>
 
 # color
 color = new Canvas("color")
-color.fractal.scheme = "colordemo"
+color.fractal.palette = new Palette("colordemo")
 color.drawIteration()
 color.drawBorder()
 color.move = (c) =>
@@ -578,6 +587,10 @@ zoomiter.drawFractal()
 zoomiter.drawIteration()
 zoomiter.click = (c) =>
     zoomiter.zoomIn(c)
+    zoomiter.drawFractal()
+    zoomiter.drawIteration()
+zoomiter.middleClick = (c) =>
+    zoomiter.zoomOut(c)
     zoomiter.drawFractal()
     zoomiter.drawIteration()
 zoomiter.move = (c) =>
