@@ -384,7 +384,7 @@ class Canvas
         @fg.lineTo(ox, y2)
         @fg.stroke()
     drawBorder: ->
-        @fg.lineWidth = 10
+        @fg.lineWidth = 20
         @fg.strokeStyle = @fractal.color(@mouse, 20).string()
         [x1, y1] = @fromWorld(new Complex(-2,-2))
         [x2, y2] = @fromWorld(new Complex(2,2))
@@ -437,7 +437,7 @@ class Canvas
             @fg.arc(x2, y2, 2, 0, 2*Math.PI, false)
             @fg.fill()
 
-            if z2.r*z2.r+z2.i*z2*i > 4
+            if z2.r*z2.r+z2.i*z2.i > 4
                 break
 
             z = z2
