@@ -23,7 +23,6 @@ class Images
             i = new Image()
             i.onload = =>
                 @assetsToLoad--
-                console.log(@assetsToLoad)
                 if @assetsToLoad == 0
                     @onload()
 
@@ -70,34 +69,42 @@ class Marker
         # nop
 
 class Mandelbrot
-    constructor: (@exp=2, @palette=(new Palette("gray"))) ->
+    constructor: (@exp=2) ->
         # nop
     step: (z, c) ->
-        #z.pow(@exp).add(c)
-        z2 = z.dup()
-        z2.i = Math.abs(z2.i)
-        z2.r = Math.abs(z2.r)
-        z2.pow(@exp).add(c)
-    color: (c, steps=3) ->
+        #z2 = z.dup()
+        #z2.i = Math.abs(z2.i)
+        #z2.r = Math.abs(z2.r)
+        #z2.pow(@exp).add(c)
+        z.pow(@exp).add(c)
+    iterate: (c, steps=3) ->
         z = new Complex(0,0)
 
-        #if @exp == 2
+        if @exp == 2
             # are we in the cardioid or the period-2 bulb?
-            #q = (c.r-0.25)*(c.r-0.25) + c.i*c.i
-            #if q*(q+(c.r-0.25)) < 0.25*c.i*c.i
-            #    return new Color(0, 0, 0, 1)
+            q = (c.r-0.25)*(c.r-0.25) + c.i*c.i
+            if q*(q+(c.r-0.25)) < 0.25*c.i*c.i
+                return -1
 
         for i in [0..steps]
             z = @step(z, c)
-            #[zx, zy] = f(x, y, zx, zy)
-            #zy = 2*zx*zy+y
-            #zx = tx-ty+x
-            #tx = zx*zx
-            #ty = zy*zy
 
             if z.r*z.r+z.i*z.i > 4
-                return @palette.color(i)
-        return new Color(0, 0, 0, 1)
+                return i
+        return -1
+
+class Square
+    step: (z, c) ->
+        if z.r == 0 and z.i == 0
+            c
+        else
+            z.pow(2)
+    iterate: (c) ->
+        z = new Complex(0,0)
+
+        for i in [0..0]
+            z = @step(z, c)
+        return -1
 
 class Color
     constructor: (@h,@s,@l,@a) ->
@@ -131,36 +138,93 @@ class Palette
     constructor: (@name="rainbow") ->
         # nop
     color: (i) ->
-        if @name == "gray"
-            return new Color(0, 0, (i*2).mod(360), 1)
-        else if @name == "rainbow"
-            return new Color((i).mod(360), 80, 60, 1)
-        else if @name == "bw"
-            return new Color(0, 80, 60, 1)
-        else if @name == "zebra"
-            return new Color(i.mod(2)*180+90, 100, 40, 1)
-        else if @name == "colordemo"
-            return new Color((i*10).mod(360), 80, 60, 1)
+        if i == -1
+            return new Color(0, 0, 0, 1)
+        switch @name
+            when "gray"
+                return new Color(0, 0, (i*2).mod(360), 1)
+            when "rainbow"
+                return new Color((i).mod(360), 80, 60, 1)
+            when "bw"
+                return new Color(0, 80, 60, 1)
+            when "zebra"
+                return new Color(i.mod(2)*180+90, 100, 40, 1)
+            when "colordemo"
+                return new Color((i*10).mod(360), 80, 60, 1)
 
 class Canvas
-    constructor: (id) ->
-        @bgCanvas = document.getElementById(id)
-        @width = @bgCanvas.offsetWidth
-        @height = @bgCanvas.offsetHeight
+    constructor: ->
+        @width = 800
+        @height = 800
 
+        @drawFractal = true
+        @drawAxes = true
+        @drawIteration = true
+        @restrictToReal = false
+
+        @depth = 50
+        @fractal = new Mandelbrot()
+        @palette = new Palette("gray")
+
+        # 0 = nothing
+        # 1 = zoom only
+        # 2 = step slider
+        @uiLevel = 9
+    init: (id) ->
+        div = document.getElementById(id)
+        #instructions = document.createElement("p")
+        #instructions.innerHTML = "Do stuff!"
+        topControls = document.createElement("div")
+        topControls.setAttribute("class", "controls")
+        bottomControls = topControls.cloneNode()
         layers = document.createElement("div")
         layers.setAttribute("class", "layers")
-
-        @bgCanvas.parentNode.insertBefore(layers, @bgCanvas)
-        layers.appendChild(@bgCanvas)
-
+        @bgCanvas = document.createElement("canvas")
         @bgCanvas.width = @width
         @bgCanvas.height = @height
-
-        #@bgCanvas.setAttribute("width", @width)
-        #@bgCanvas.setAttribute("height", @height)
         @fgCanvas = @bgCanvas.cloneNode()
-        #layers.appendChild(@bgCanvas)
+
+        resetButton = document.createElement("button")
+        resetButton.innerHTML = "Reset"
+        resetButton.onclick = =>
+            @zoomReset()
+
+        zoomInButton = document.createElement("button")
+        zoomInButton.innerHTML = "+"
+        zoomInButton.onclick = =>
+            @zoomIn(@flag.pos)
+
+        zoomOutButton = document.createElement("button")
+        zoomOutButton.innerHTML = "-"
+        zoomOutButton.onclick = =>
+            @zoomOut(@flag.pos)
+
+        stepCounter = document.createElement("span")
+        stepCounter.innerHTML = @depth+" steps"
+
+        timeSlider = document.createElement("input")
+        timeSlider.setAttribute("type", "range")
+        timeSlider.setAttribute("min", "0")
+        timeSlider.setAttribute("max", "100")
+        timeSlider.setAttribute("value", @depth)
+        timeSlider.setAttribute("style", "width: 600px")
+        timeSlider.oninput = =>
+            @depth = timeSlider.value
+            stepCounter.innerHTML = @depth+" steps"
+            @draw()
+
+        #div.appendChild(instructions)
+        div.appendChild(topControls)
+        div.appendChild(layers)
+        div.appendChild(bottomControls)
+        if @uiLevel > 0
+            topControls.appendChild(resetButton)
+            topControls.appendChild(zoomInButton)
+            topControls.appendChild(zoomOutButton)
+        if @uiLevel > 1
+            topControls.appendChild(timeSlider)
+            topControls.appendChild(stepCounter)
+        layers.appendChild(@bgCanvas)
         layers.appendChild(@fgCanvas)
 
         @bg = @bgCanvas.getContext("2d")
@@ -169,25 +233,21 @@ class Canvas
         @data = @bg.getImageData(0, 0, @width, @height)
 
         @zoom = @width/4
+        @zoomCount = 0
         @center = new Complex(0,0)
         @mouse = new Complex(0,0)
 
-        @flag = new Marker(new Complex(0.3,0.3), "flag.png", new Color(90, 80, 50, 1))
+        # markers
+        @flag = new Marker(new Complex(0.3,-0.3), "flag.png", new Color(90, 80, 50, 1))
+        if @restrictToReal
+            @flag.pos.i = 0
         @flag.draggable = true
         @flag.ox = 2
         @flag.oy = Images.get("flag.png").height
-        @bunny = new Marker(new Complex(0,0), "bunny.jpg", new Color(180, 80, 50, 1))
-        @markers = [@flag, @bunny]
+        @bunny = new Marker(new Complex(0,0), "bunny.png", new Color(180, 80, 50, 1))
+        @markers = [@bunny, @flag]
 
-        @fractal = new Mandelbrot()
-        @depth = 100
         @dragging = undefined
-
-        @click = =>
-
-        @middleClick = =>
-
-        @move = =>
 
         @mousedown = false
         @fgCanvas.onmousedown = (event) =>
@@ -195,38 +255,50 @@ class Canvas
                 @mousedown = true
                 rect = @fgCanvas.getBoundingClientRect()
                 @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
-                for marker in @markers
-                    if marker.draggable
-                        if @mouse.sub(marker.pos).length2() < 0.001
-                            @dragging = marker
-                            @fgCanvas.style.cursor = "move"
 
-                @click(@mouse)
+                if @drawIteration
+                    for marker in @markers
+                        if marker.draggable
+                            if @mouse.sub(marker.pos).length2() < 0.06
+                                @dragging = marker
+                                @fgCanvas.style.cursor = "move"
+
+                @draw()
             else if event.which == 2 # middle
                 rect = @fgCanvas.getBoundingClientRect()
                 @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
-                @middleClick(@mouse)
+                @draw()
             return false
 
         @fgCanvas.onmouseup = (event) =>
             if event.which == 1 # left
                 @mousedown = false
-                @dragging = undefined
+                if @dragging
+                    @dragging = undefined
+                else if @uiLevel > 0
+                    @zoomIn(@mouse)
                 @fgCanvas.style.cursor = "auto"
 
         @fgCanvas.onmousemove = (event) =>
             rect = @fgCanvas.getBoundingClientRect()
             @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
-            if @dragging
-                @dragging.pos = @mouse
-            else
-                for marker in @markers
-                    if marker.draggable
-                        if @mouse.sub(marker.pos).length2() < 0.001
-                            @fgCanvas.style.cursor = "pointer"
-                        else
-                            @fgCanvas.style.cursor = "auto"
-            @move(@mouse)
+            if @drawIteration
+                if @dragging
+                    if @restrictToReal
+                        @dragging.pos = @mouse
+                        @dragging.pos.i = 0
+                    else
+                        @dragging.pos = @mouse
+                else
+                    for marker in @markers
+                        if marker.draggable
+                            if @mouse.sub(marker.pos).length2() < 0.06
+                                @fgCanvas.style.cursor = "pointer"
+                            else
+                                @fgCanvas.style.cursor = "auto"
+            @draw()
+
+        @draw(true)
 
     toWorld: (x, y) ->
         r = (x-@width/2)/@zoom+@center.r
@@ -238,12 +310,22 @@ class Canvas
         return [x, y]
     zoomIn: (c) ->
         @zoom *= 2
+        @zoomCount++
         @center = @center.add(c).div(2)
+        @draw(true)
+        @zoomHook(@zoomCount)
     zoomOut: (c) ->
         @zoom /= 2
-        # c2 = (c1+m)/2
-        # c1 = c2*2-m
+        @zoomCount--
         @center = @center.mul(2).sub(c)
+        @draw(true)
+        @zoomHook(@zoomCount)
+    zoomReset: ->
+        @zoom = @width/4
+        @center = new Complex(0, 0)
+        @draw(true)
+        @zoomCount = 0
+        @zoomHook(@zoomCount)
     addPoint: (c, size) ->
         if @mousedown
             for dx in [-size..size]
@@ -255,7 +337,8 @@ class Canvas
                     yy = Math.floor(yy)
                     offset = (@width*yy+xx)*4
                     cc = @toWorld(xx, yy)
-                    col = @fractal.color(cc, 20)
+                    i = @fractal.iterate(cc, 20)
+                    col = @palette.color(i)
                     [r,g,b,a] = col.rgba()
                     @data.data[offset++] = r
                     @data.data[offset++] = g
@@ -265,8 +348,10 @@ class Canvas
     clearBg: ->
         @bg.clearRect 0, 0, @width, @height
         @data = @bg.getImageData(0, 0, @width, @height)
-    drawReal: ->
+    clearFg: ->
         @fg.clearRect 0, 0, @width, @height
+    drawReal: ->
+        @clearFg()
 
         [ox, oy] = @fromWorld(new Complex(0,0))
         [x1, y1] = @fromWorld(new Complex(-2,0))
@@ -298,8 +383,6 @@ class Canvas
 
         [ox, oy] = @fromWorld(new Complex(0,0))
         [mx, my] = @fromWorld(@mouse)
-
-        @drawAxes()
 
         @fg.lineWidth = 5
 
@@ -356,7 +439,6 @@ class Canvas
         [mx, my] = @fromWorld(@mouse)
         [mx2, my2] = @fromWorld(@mouse.pow(2))
 
-        @drawAxes()
         @fg.beginPath()
         @fg.arc(ox, oy, 1*@zoom, 0, 2*Math.PI, false)
         @fg.stroke()
@@ -389,7 +471,6 @@ class Canvas
     drawStep: ->
         @fg.clearRect 0, 0, @width, @height
 
-        @drawAxes()
         [ox, oy] = @fromWorld(new Complex(0,0))
 
         [mx, my] = @fromWorld(@mouse)
@@ -429,26 +510,9 @@ class Canvas
         @fg.fillStyle = "black"
         @fg.fillText("c^2+c", mx3+5, my3-5)
 
-    drawAxes: ->
-        [ox, oy] = @fromWorld(new Complex(0,0))
-        [x1, y1] = @fromWorld(new Complex(-2,-2))
-        [x2, y2] = @fromWorld(new Complex(2,2))
-
-        @fg.lineWidth = 1
-        @fg.strokeStyle = "black"
-
-        @fg.beginPath()
-        @fg.moveTo(x1, oy)
-        @fg.lineTo(x2, oy)
-        @fg.stroke()
-
-        @fg.beginPath()
-        @fg.moveTo(ox, y1)
-        @fg.lineTo(ox, y2)
-        @fg.stroke()
     drawBorder: ->
         @fg.lineWidth = 20
-        @fg.strokeStyle = @fractal.color(@mouse, 20).string()
+        @fg.strokeStyle = @palette.color(@fractal.iterate(@mouse, 20)).string()
         [x1, y1] = @fromWorld(new Complex(-2,-2))
         [x2, y2] = @fromWorld(new Complex(2,2))
 
@@ -461,222 +525,294 @@ class Canvas
         #@fg.arc(ox, oy, @zoom*2+@fg.lineWidth/2, 0, 2*Math.PI, false)
         @fg.stroke()
 
-    draw: ->
-        @drawFractal()
-        @drawIteration()
-        @drawMarkers()
-    drawFractal: ->
-        offset = 0
-        for y in [0..@height-1]
-            for x in [0..@width-1]
-                c = @toWorld(x, y)
-                [r,g,b,a] = @fractal.color(c, 20*Math.log2(@zoom)).rgba()
-                @data.data[offset++] = r
-                @data.data[offset++] = g
-                @data.data[offset++] = b
-                @data.data[offset++] = a
+    draw: (drawBg=false) ->
+        if drawBg and @drawFractal
+            @clearBg()
+            offset = 0
+            for y in [0..@height-1]
+                for x in [0..@width-1]
+                    c = @toWorld(x, y)
+                    [r,g,b,a] = @palette.color(@fractal.iterate(c, 20*Math.log2(@zoom))).rgba()
+                    @data.data[offset++] = r
+                    @data.data[offset++] = g
+                    @data.data[offset++] = b
+                    @data.data[offset++] = a
+            @bg.putImageData(@data, 0, 0)
+        @clearFg()
+        if @drawAxes
+            [ox, oy] = @fromWorld(new Complex(0,0))
+            [x1, y1] = @fromWorld(new Complex(-2,-2))
+            [x2, y2] = @fromWorld(new Complex(2,2))
 
-        @bg.putImageData(@data, 0, 0)
-    drawIteration: ->
-        @fg.clearRect 0, 0, @width, @height
 
-        @drawAxes()
+            @fg.lineWidth = 1
+            @fg.strokeStyle = "black"
 
-        @fg.strokeStyle = "blue"
-        @fg.lineWidth = 0.5
-        @fg.fillStyle = "blue"
-
-        z = new Complex(0, 0)
-        c = @flag.pos
-
-        for i in [0..@depth]
-            [x1, y1] = @fromWorld(z)
-            z2 = @fractal.step(z, c)
-            [x2, y2] = @fromWorld(z2)
-
-            #@fg.strokeStyle = @fractal.palette.color(i).string()
             @fg.beginPath()
-            @fg.moveTo(x1, y1)
-            @fg.lineTo(x2, y2)
+            @fg.moveTo(x1, oy)
+            @fg.lineTo(x2, oy)
             @fg.stroke()
+
             @fg.beginPath()
-            @fg.arc(x2, y2, 2, 0, 2*Math.PI, false)
-            @fg.fill()
+            @fg.moveTo(ox, y1)
+            @fg.lineTo(ox, y2)
+            @fg.stroke()
 
-            if z2.r*z2.r > 4 or z2.i*z2.i > 4
-                @bunny.pos = z2
-                break
-
-            z = z2
-
-        @bunny.pos = z2
-    drawMarkers: ->
-        for marker in @markers
-            [x, y] = @fromWorld(marker.pos)
-            @fg.fillStyle = marker.color.string()
+            @fg.setLineDash([5, 5])
             @fg.beginPath()
-            @fg.arc(x, y, 5, 0, 2*Math.PI, false)
-            @fg.fill()
-            i = Images.get(marker.name)
-            @fg.drawImage(i, x-marker.ox, y-marker.oy)
+            @fg.arc(ox, oy, @zoom*2, 0, 2*Math.PI, false)
+            @fg.stroke()
+            @fg.setLineDash([])
+
+            @fg.textAlign = "center"
+            @fg.font = "20px sans-serif"
+            @fg.fillStyle = "black"
+
+            [x, y] = @fromWorld(new Complex(1,0))
+            @fg.fillText("1", x, y)
+            [x, y] = @fromWorld(new Complex(-1,0))
+            @fg.fillText("-1", x, y)
+            [x, y] = @fromWorld(new Complex(0,1))
+            @fg.fillText("1", x, y)
+            [x, y] = @fromWorld(new Complex(0,-1))
+            @fg.fillText("-1", x, y)
+            [x, y] = @fromWorld(new Complex(2,0))
+            @fg.fillText("2", x, y)
+            [x, y] = @fromWorld(new Complex(-2,0))
+            @fg.fillText("-2", x, y)
+            [x, y] = @fromWorld(new Complex(0,2))
+            @fg.fillText("2", x, y)
+            [x, y] = @fromWorld(new Complex(0,-2))
+            @fg.fillText("-2", x, y)
+        if @drawIteration
+            @fg.strokeStyle = "blue"
+            @fg.lineWidth = 0.5
+            @fg.fillStyle = "blue"
+
+            c = @flag.pos
+            @bunny.pos = new Complex(0, 0)
+
+            if @depth > 0
+                for i in [0..@depth-1]
+                    [x1, y1] = @fromWorld(@bunny.pos)
+                    z2 = @fractal.step(@bunny.pos, c)
+                    [x2, y2] = @fromWorld(z2)
+
+                    #@fg.strokeStyle = @fractal.palette.color(i).string()
+                    @fg.beginPath()
+                    @fg.moveTo(x1, y1)
+                    @fg.lineTo(x2, y2)
+                    @fg.stroke()
+                    @fg.beginPath()
+                    @fg.arc(x2, y2, 2, 0, 2*Math.PI, false)
+                    @fg.fill()
+
+                    @bunny.pos = z2
+
+                    if z2.r*z2.r > 4 or z2.i*z2.i > 4
+                        break
+
+            for marker in @markers
+                [x, y] = @fromWorld(marker.pos)
+                @fg.fillStyle = marker.color.string()
+                @fg.beginPath()
+                @fg.arc(x, y, 5, 0, 2*Math.PI, false)
+                @fg.fill()
+                i = Images.get(marker.name)
+                @fg.drawImage(i, x-marker.ox, y-marker.oy)
+
 
 Images.onload = ->
-    # plain
-    zoomCount = 0
+    demos = document.getElementsByClassName("demo")
+    for demo in demos
+        id = demo.id
+        canvas = new Canvas()
+        switch id
+            when "plain"
+                zc = document.getElementById("zoomcount")
+                zp = document.getElementById("zoompersons")
+                zr = document.getElementById("zoomremark")
 
-    plain = new Canvas("plain")
-    plain.drawFractal()
-    zc = document.getElementById("zoomcount")
-    zp = document.getElementById("zoompersons")
-    zr = document.getElementById("zoomremark")
+                canvas.drawAxes = false
+                canvas.drawIteration = false
+                canvas.uiLevel = 1
+                canvas.zoomHook = (level) ->
+                    if level == 1
+                        zc.innerHTML = level+" time"
+                    else
+                        zc.innerHTML = level+" times"
+                    humans = Math.floor(Math.pow(0.25, level)*7.5e9)
+                    if humans == 7.5e9
+                        zp.innerHTML = "all"
+                    else if humans == 0
+                        zp.innerHTML = "none"
+                    else
+                        zp.innerHTML = humans
+                    if humans == 0
+                        zr.innerHTML = "This means it's very, very probable that you are the first human being ever to see this region of the Mandelbrot set!"# If you wanna give it a name, here's its coordinate: "+plain.center.string()
+                    else
+                        zr.innerHTML = ""
 
-    calcCount = ->
-        if zoomCount == 1
-            zc.innerHTML = zoomCount+" time"
-        else
-            zc.innerHTML = zoomCount+" times"
-        humans = Math.floor(Math.pow(0.25, zoomCount)*7.5e9)
-        if humans == 7.5e9
-            zp.innerHTML = "all"
-        else if humans == 0
-            zp.innerHTML = "none"
-        else
-            zp.innerHTML = humans
-        if humans == 0
-            zr.innerHTML = "This means it's very, very probable that you are the first human being ever to see this region of the Mandelbrot set!"# If you wanna give it a name, here's its coordinate: "+plain.center.string()
-        else
-            zr.innerHTML = ""
+            when "real"
+                canvas.drawFractal = false
+                canvas.depth = 0
+                canvas.restrictToReal = true
+                canvas.uiLevel = 0
+            when "complex"
+                canvas.drawFractal = false
+                canvas.depth = 0
+                canvas.uiLevel = 0
+            when "square"
+                canvas.drawFractal = false
+                canvas.depth = 2
+                canvas.fractal = new Square()
+                canvas.uiLevel = 0
+            when "step"
+                canvas.drawFractal = false
+                canvas.depth = 2
+                canvas.uiLevel = 0
+            when "iteration"
+                canvas.drawFractal = false
+                canvas.depth = 2
+        canvas.init(id)
+    ## plain
+    #zoomCount = 0
+
+    #plain = new Canvas("plain")
+    #plain.drawFractal()
+
+    #calcCount = ->
 
 
-    calcCount()
+    #calcCount()
 
-    plain.click = (c) =>
-        plain.zoomIn(c)
-        zoomCount++
-        calcCount()
-        plain.drawFractal()
+    #plain.click = (c) =>
+    #    plain.zoomIn(c)
+    #    zoomCount++
+    #    calcCount()
+    #    plain.drawFractal()
 
-    document.getElementById("plain-reset").onclick = =>
-        plain.zoom = plain.width/4
-        plain.center = new Complex(0, 0)
-        zoomCount = 0
-        calcCount()
-        plain.drawFractal()
+    #document.getElementById("plain-reset").onclick = =>
+    #    plain.zoom = plain.width/4
+    #    plain.center = new Complex(0, 0)
+    #    zoomCount = 0
+    #    calcCount()
+    #    plain.drawFractal()
 
-    # exp
-    exp = new Canvas("exp")
-    exp.draw()
+    ## exp
+    #exp = new Canvas("exp")
+    #exp.draw()
 
-    exp.click = (c) =>
-        exp.zoomIn(c)
-        exp.draw()
+    #exp.click = (c) =>
+    #    exp.zoomIn(c)
+    #    exp.draw()
 
-    document.getElementById("exp-reset").onclick = =>
-        exp.zoom = exp.width/4
-        exp.center = new Complex(0, 0)
-        exp.draw()
-    exp.move = (c) =>
-        exp.drawIteration()
+    #document.getElementById("exp-reset").onclick = =>
+    #    exp.zoom = exp.width/4
+    #    exp.center = new Complex(0, 0)
+    #    exp.draw()
+    #exp.move = (c) =>
+    #    exp.drawIteration()
 
-    expExp = document.getElementById("exp-exp")
-    expExp.oninput = =>
-        exp.fractal.exp = expExp.value
-        exp.draw()
+    #expExp = document.getElementById("exp-exp")
+    #expExp.oninput = =>
+    #    exp.fractal.exp = expExp.value
+    #    exp.draw()
 
-    # real
-    real = new Canvas("real")
-    real.drawReal()
-    real.move = (c) =>
-        real.drawReal()
+    ## real
+    #real = new Canvas("real")
+    #real.drawReal()
+    #real.move = (c) =>
+    #    real.drawReal()
 
-    # complex
-    complex = new Canvas("complex")
-    complex.drawComplex()
-    complex.move = (c) =>
-        complex.drawComplex()
+    ## complex
+    #complex = new Canvas("complex")
+    #complex.drawComplex()
+    #complex.move = (c) =>
+    #    complex.drawComplex()
 
-    # square
-    square = new Canvas("square")
-    square.drawSquare()
-    square.move = (c) =>
-        square.drawSquare()
+    ## square
+    #square = new Canvas("square")
+    #square.drawSquare()
+    #square.move = (c) =>
+    #    square.drawSquare()
 
-    # step
-    step = new Canvas("step")
-    step.drawStep()
-    step.move = (c) =>
-        step.drawStep()
+    ## step
+    #step = new Canvas("step")
+    #step.drawStep()
+    #step.move = (c) =>
+    #    step.drawStep()
 
-    # iteration
-    iteration = new Canvas("iteration")
-    iteration.drawIteration()
-    iteration.move = (c) =>
-        iteration.drawIteration()
+    ## iteration
+    #iteration = new Canvas("iteration")
+    #iteration.drawIteration()
+    #iteration.move = (c) =>
+    #    iteration.drawIteration()
 
-    # scribble
-    scribble = new Canvas("scribble")
-    scribble.fractal.palette = new Palette("bw")
-    scribble.drawIteration()
-    scribble.drawBorder()
-    scribble.move = (c) =>
-        scribble.addPoint(c, 5)
-        scribble.drawIteration()
-        scribble.drawBorder()
-    document.getElementById("scribble-reset").onclick = =>
-        scribble.clearBg()
+    ## scribble
+    #scribble = new Canvas("scribble")
+    #scribble.fractal.palette = new Palette("bw")
+    #scribble.drawIteration()
+    #scribble.drawBorder()
+    #scribble.move = (c) =>
+    #    scribble.addPoint(c, 5)
+    #    scribble.drawIteration()
+    #    scribble.drawBorder()
+    #document.getElementById("scribble-reset").onclick = =>
+    #    scribble.clearBg()
 
-    # color
-    color = new Canvas("color")
-    color.fractal.palette = new Palette("colordemo")
-    color.drawIteration()
-    color.drawBorder()
-    color.move = (c) =>
-        color.addPoint(c, 10)
-        color.drawIteration()
-        color.drawBorder()
-    document.getElementById("color-reset").onclick = =>
-        color.clearBg()
+    ## color
+    #color = new Canvas("color")
+    #color.fractal.palette = new Palette("colordemo")
+    #color.drawIteration()
+    #color.drawBorder()
+    #color.move = (c) =>
+    #    color.addPoint(c, 10)
+    #    color.drawIteration()
+    #    color.drawBorder()
+    #document.getElementById("color-reset").onclick = =>
+    #    color.clearBg()
 
-    # zoomiter
-    zoomiter = new Canvas("zoomiter")
-    zoomiter.drawFractal()
-    zoomiter.drawIteration()
-    zoomiter.click = (c) =>
-        zoomiter.zoomIn(c)
-        zoomiter.drawFractal()
-        zoomiter.drawIteration()
-    zoomiter.middleClick = (c) =>
-        zoomiter.zoomOut(c)
-        zoomiter.drawFractal()
-        zoomiter.drawIteration()
-    zoomiter.move = (c) =>
-        zoomiter.drawIteration()
-    document.getElementById("zoomiter-reset").onclick = =>
-        zoomiter.zoom = zoomiter.width/4
-        zoomiter.center = new Complex(0, 0)
-        zoomiter.draw()
+    ## zoomiter
+    #zoomiter = new Canvas("zoomiter")
+    #zoomiter.drawFractal()
+    #zoomiter.drawIteration()
+    #zoomiter.click = (c) =>
+    #    zoomiter.zoomIn(c)
+    #    zoomiter.drawFractal()
+    #    zoomiter.drawIteration()
+    #zoomiter.middleClick = (c) =>
+    #    zoomiter.zoomOut(c)
+    #    zoomiter.drawFractal()
+    #    zoomiter.drawIteration()
+    #zoomiter.move = (c) =>
+    #    zoomiter.drawIteration()
+    #document.getElementById("zoomiter-reset").onclick = =>
+    #    zoomiter.zoom = zoomiter.width/4
+    #    zoomiter.center = new Complex(0, 0)
+    #    zoomiter.draw()
 
-    # sandbox
-    sandbox = new Canvas("sandbox")
-    sandbox.draw()
+    ## sandbox
+    #sandbox = new Canvas("sandbox")
+    #sandbox.draw()
 
-    #sandbox.click = (c) =>
-    #    sandbox.zoomIn(c)
+    ##sandbox.click = (c) =>
+    ##    sandbox.zoomIn(c)
+    ##    sandbox.draw()
+
+    #document.getElementById("sandbox-reset").onclick = =>
+    #    sandbox.zoom = sandbox.width/4
+    #    sandbox.center = new Complex(0, 0)
     #    sandbox.draw()
-
-    document.getElementById("sandbox-reset").onclick = =>
-        sandbox.zoom = sandbox.width/4
-        sandbox.center = new Complex(0, 0)
-        sandbox.draw()
-    document.getElementById("sandbox-slider").oninput = ->
-        sandbox.depth = this.value
-        sandbox.drawIteration()
-        sandbox.drawMarkers()
-    sandbox.move = (c) =>
-        sandbox.drawIteration()
-        sandbox.drawMarkers()
+    #document.getElementById("sandbox-slider").oninput = ->
+    #    sandbox.depth = this.value
+    #    sandbox.drawIteration()
+    #    sandbox.drawMarkers()
+    #sandbox.move = (c) =>
+    #    sandbox.drawIteration()
+    #    sandbox.drawMarkers()
 
 Images.load([
-    "bunny.jpg"
+    "bunny.png"
     "flag.png"
 ])
