@@ -15,6 +15,23 @@ toFixed = (x) ->
             x += (new Array(e+1)).join('0')
     return x
 
+class Images
+    @images = []
+    @load: (filenames) ->
+        @assetsToLoad = filenames.length
+        for f in filenames
+            i = new Image()
+            i.onload = =>
+                @assetsToLoad--
+                console.log(@assetsToLoad)
+                if @assetsToLoad == 0
+                    @onload()
+
+            i.src = "./images/"+f
+            @images[f] = i
+    @get: (filename) ->
+        return @images[filename]
+
 class Complex
     constructor: (@r, @i) ->
         # nop
@@ -42,20 +59,33 @@ class Complex
         new Complex(@r/scalar, @i/scalar)
     mul: (scalar) ->
         new Complex(@r*scalar, @i*scalar)
+    length2: ->
+        @r*@r + @i*@i
+
+class Marker
+    constructor: (@pos, @name, @color) ->
+        @draggable = false
+        @ox = Images.get(@name).width/2
+        @oy = Images.get(@name).height/2
+        # nop
 
 class Mandelbrot
-    constructor: (@exp=2, @palette=(new Palette("rainbow"))) ->
+    constructor: (@exp=2, @palette=(new Palette("gray"))) ->
         # nop
     step: (z, c) ->
-        z.pow(@exp).add(c)
+        #z.pow(@exp).add(c)
+        z2 = z.dup()
+        z2.i = Math.abs(z2.i)
+        z2.r = Math.abs(z2.r)
+        z2.pow(@exp).add(c)
     color: (c, steps=3) ->
         z = new Complex(0,0)
 
-        if @exp == 2
+        #if @exp == 2
             # are we in the cardioid or the period-2 bulb?
-            q = (c.r-0.25)*(c.r-0.25) + c.i*c.i
-            if q*(q+(c.r-0.25)) < 0.25*c.i*c.i
-                return new Color(0, 0, 0, 1)
+            #q = (c.r-0.25)*(c.r-0.25) + c.i*c.i
+            #if q*(q+(c.r-0.25)) < 0.25*c.i*c.i
+            #    return new Color(0, 0, 0, 1)
 
         for i in [0..steps]
             z = @step(z, c)
@@ -102,7 +132,7 @@ class Palette
         # nop
     color: (i) ->
         if @name == "gray"
-            return new Color(0, 0, i, 1)
+            return new Color(0, 0, (i*2).mod(360), 1)
         else if @name == "rainbow"
             return new Color((i).mod(360), 80, 60, 1)
         else if @name == "bw"
@@ -114,19 +144,23 @@ class Palette
 
 class Canvas
     constructor: (id) ->
-        @width = 400
-        @height = 400
+        @bgCanvas = document.getElementById(id)
+        @width = @bgCanvas.offsetWidth
+        @height = @bgCanvas.offsetHeight
 
-        div = document.getElementById(id)
         layers = document.createElement("div")
         layers.setAttribute("class", "layers")
-        div.appendChild(layers)
 
-        @bgCanvas = document.createElement("canvas")
-        @bgCanvas.setAttribute("width", @width)
-        @bgCanvas.setAttribute("height", @height)
-        @fgCanvas = @bgCanvas.cloneNode()
+        @bgCanvas.parentNode.insertBefore(layers, @bgCanvas)
         layers.appendChild(@bgCanvas)
+
+        @bgCanvas.width = @width
+        @bgCanvas.height = @height
+
+        #@bgCanvas.setAttribute("width", @width)
+        #@bgCanvas.setAttribute("height", @height)
+        @fgCanvas = @bgCanvas.cloneNode()
+        #layers.appendChild(@bgCanvas)
         layers.appendChild(@fgCanvas)
 
         @bg = @bgCanvas.getContext("2d")
@@ -138,7 +172,16 @@ class Canvas
         @center = new Complex(0,0)
         @mouse = new Complex(0,0)
 
+        @flag = new Marker(new Complex(0.3,0.3), "flag.png", new Color(90, 80, 50, 1))
+        @flag.draggable = true
+        @flag.ox = 2
+        @flag.oy = Images.get("flag.png").height
+        @bunny = new Marker(new Complex(0,0), "bunny.jpg", new Color(180, 80, 50, 1))
+        @markers = [@flag, @bunny]
+
         @fractal = new Mandelbrot()
+        @depth = 100
+        @dragging = undefined
 
         @click = =>
 
@@ -152,6 +195,12 @@ class Canvas
                 @mousedown = true
                 rect = @fgCanvas.getBoundingClientRect()
                 @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
+                for marker in @markers
+                    if marker.draggable
+                        if @mouse.sub(marker.pos).length2() < 0.001
+                            @dragging = marker
+                            @fgCanvas.style.cursor = "move"
+
                 @click(@mouse)
             else if event.which == 2 # middle
                 rect = @fgCanvas.getBoundingClientRect()
@@ -162,16 +211,23 @@ class Canvas
         @fgCanvas.onmouseup = (event) =>
             if event.which == 1 # left
                 @mousedown = false
+                @dragging = undefined
+                @fgCanvas.style.cursor = "auto"
 
         @fgCanvas.onmousemove = (event) =>
             rect = @fgCanvas.getBoundingClientRect()
             @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
+            if @dragging
+                @dragging.pos = @mouse
+            else
+                for marker in @markers
+                    if marker.draggable
+                        if @mouse.sub(marker.pos).length2() < 0.001
+                            @fgCanvas.style.cursor = "pointer"
+                        else
+                            @fgCanvas.style.cursor = "auto"
             @move(@mouse)
 
-        #@fgCanvas.onmousemove = (event) =>
-        #    rect = @bgCanvas.getBoundingClientRect()
-        #    @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
-        #    @drawIteration()
     toWorld: (x, y) ->
         r = (x-@width/2)/@zoom+@center.r
         i = -(y-@height/2)/@zoom+@center.i
@@ -408,6 +464,7 @@ class Canvas
     draw: ->
         @drawFractal()
         @drawIteration()
+        @drawMarkers()
     drawFractal: ->
         offset = 0
         for y in [0..@height-1]
@@ -430,9 +487,9 @@ class Canvas
         @fg.fillStyle = "blue"
 
         z = new Complex(0, 0)
-        c = @mouse
+        c = @flag.pos
 
-        for i in [0..500]
+        for i in [0..@depth]
             [x1, y1] = @fromWorld(z)
             z2 = @fractal.step(z, c)
             [x2, y2] = @fromWorld(z2)
@@ -447,155 +504,179 @@ class Canvas
             @fg.fill()
 
             if z2.r*z2.r > 4 or z2.i*z2.i > 4
+                @bunny.pos = z2
                 break
 
             z = z2
 
-f = (cx, cy, zx, zy) ->
-    if mode == "julia"
-        #return [zx*zx-zy*zy-0.4, 2*zx*zy+0.6]
-        #return [zx*zx-zy*zy+0.285, 2*zx*zy+0.01]
-        return [zx*zx-zy*zy+(1-1.6180339887), 2*zx*zy]
-    else
-        # z^2+c
-        return [zx*zx-zy*zy+cx, 2*zx*zy+cy]
-        # mandelbar
-        return [zx*zx-zy*zy+cx, 2*zx*zy+cy]
+        @bunny.pos = z2
+    drawMarkers: ->
+        for marker in @markers
+            [x, y] = @fromWorld(marker.pos)
+            @fg.fillStyle = marker.color.string()
+            @fg.beginPath()
+            @fg.arc(x, y, 5, 0, 2*Math.PI, false)
+            @fg.fill()
+            i = Images.get(marker.name)
+            @fg.drawImage(i, x-marker.ox, y-marker.oy)
 
-[h,s,l,a] = new Color(200, 80, 20, 1).rgba()
-
-# plain
-zoomCount = 0
-
-plain = new Canvas("plain")
-plain.drawFractal()
-zc = document.getElementById("zoomcount")
-zp = document.getElementById("zoompersons")
-zr = document.getElementById("zoomremark")
-
-calcCount = ->
-    if zoomCount == 1
-        zc.innerHTML = zoomCount+" time"
-    else
-        zc.innerHTML = zoomCount+" times"
-    humans = Math.floor(Math.pow(0.25, zoomCount)*7.5e9)
-    if humans == 7.5e9
-        zp.innerHTML = "all"
-    else if humans == 0
-        zp.innerHTML = "none"
-    else
-        zp.innerHTML = humans
-    if humans == 0
-        zr.innerHTML = "This means it's very, very probable that you are the first human being ever to see this region of the Mandelbrot set!"# If you wanna give it a name, here's its coordinate: "+plain.center.string()
-    else
-        zr.innerHTML = ""
-
-
-calcCount()
-
-plain.click = (c) =>
-    plain.zoomIn(c)
-    zoomCount++
-    calcCount()
-    plain.drawFractal()
-
-document.getElementById("plain-reset").onclick = =>
-    plain.zoom = plain.width/4
-    plain.center = new Complex(0, 0)
+Images.onload = ->
+    # plain
     zoomCount = 0
-    calcCount()
+
+    plain = new Canvas("plain")
     plain.drawFractal()
+    zc = document.getElementById("zoomcount")
+    zp = document.getElementById("zoompersons")
+    zr = document.getElementById("zoomremark")
 
-# exp
-exp = new Canvas("exp")
-exp.draw()
+    calcCount = ->
+        if zoomCount == 1
+            zc.innerHTML = zoomCount+" time"
+        else
+            zc.innerHTML = zoomCount+" times"
+        humans = Math.floor(Math.pow(0.25, zoomCount)*7.5e9)
+        if humans == 7.5e9
+            zp.innerHTML = "all"
+        else if humans == 0
+            zp.innerHTML = "none"
+        else
+            zp.innerHTML = humans
+        if humans == 0
+            zr.innerHTML = "This means it's very, very probable that you are the first human being ever to see this region of the Mandelbrot set!"# If you wanna give it a name, here's its coordinate: "+plain.center.string()
+        else
+            zr.innerHTML = ""
 
-exp.click = (c) =>
-    exp.zoomIn(c)
+
+    calcCount()
+
+    plain.click = (c) =>
+        plain.zoomIn(c)
+        zoomCount++
+        calcCount()
+        plain.drawFractal()
+
+    document.getElementById("plain-reset").onclick = =>
+        plain.zoom = plain.width/4
+        plain.center = new Complex(0, 0)
+        zoomCount = 0
+        calcCount()
+        plain.drawFractal()
+
+    # exp
+    exp = new Canvas("exp")
     exp.draw()
-    exp.draw()
 
-document.getElementById("exp-reset").onclick = =>
-    exp.zoom = exp.width/4
-    exp.center = new Complex(0, 0)
-    exp.draw()
-exp.move = (c) =>
-    exp.drawIteration()
+    exp.click = (c) =>
+        exp.zoomIn(c)
+        exp.draw()
 
-expExp = document.getElementById("exp-exp")
-expExp.oninput = =>
-    exp.fractal.exp = expExp.value
-    exp.draw()
+    document.getElementById("exp-reset").onclick = =>
+        exp.zoom = exp.width/4
+        exp.center = new Complex(0, 0)
+        exp.draw()
+    exp.move = (c) =>
+        exp.drawIteration()
 
-# real
-real = new Canvas("real")
-real.drawReal()
-real.move = (c) =>
+    expExp = document.getElementById("exp-exp")
+    expExp.oninput = =>
+        exp.fractal.exp = expExp.value
+        exp.draw()
+
+    # real
+    real = new Canvas("real")
     real.drawReal()
+    real.move = (c) =>
+        real.drawReal()
 
-# complex
-complex = new Canvas("complex")
-complex.drawComplex()
-complex.move = (c) =>
+    # complex
+    complex = new Canvas("complex")
     complex.drawComplex()
+    complex.move = (c) =>
+        complex.drawComplex()
 
-# square
-square = new Canvas("square")
-square.drawSquare()
-square.move = (c) =>
+    # square
+    square = new Canvas("square")
     square.drawSquare()
+    square.move = (c) =>
+        square.drawSquare()
 
-# step
-step = new Canvas("step")
-step.drawStep()
-step.move = (c) =>
+    # step
+    step = new Canvas("step")
     step.drawStep()
+    step.move = (c) =>
+        step.drawStep()
 
-# iteration
-iteration = new Canvas("iteration")
-iteration.drawIteration()
-iteration.move = (c) =>
+    # iteration
+    iteration = new Canvas("iteration")
     iteration.drawIteration()
+    iteration.move = (c) =>
+        iteration.drawIteration()
 
-# scribble
-scribble = new Canvas("scribble")
-scribble.fractal.palette = new Palette("bw")
-scribble.drawIteration()
-scribble.drawBorder()
-scribble.move = (c) =>
-    scribble.addPoint(c, 5)
+    # scribble
+    scribble = new Canvas("scribble")
+    scribble.fractal.palette = new Palette("bw")
     scribble.drawIteration()
     scribble.drawBorder()
-document.getElementById("scribble-reset").onclick = =>
-    scribble.clearBg()
+    scribble.move = (c) =>
+        scribble.addPoint(c, 5)
+        scribble.drawIteration()
+        scribble.drawBorder()
+    document.getElementById("scribble-reset").onclick = =>
+        scribble.clearBg()
 
-# color
-color = new Canvas("color")
-color.fractal.palette = new Palette("colordemo")
-color.drawIteration()
-color.drawBorder()
-color.move = (c) =>
-    color.addPoint(c, 10)
+    # color
+    color = new Canvas("color")
+    color.fractal.palette = new Palette("colordemo")
     color.drawIteration()
     color.drawBorder()
-document.getElementById("color-reset").onclick = =>
-    color.clearBg()
+    color.move = (c) =>
+        color.addPoint(c, 10)
+        color.drawIteration()
+        color.drawBorder()
+    document.getElementById("color-reset").onclick = =>
+        color.clearBg()
 
-# zoomiter
-zoomiter = new Canvas("zoomiter")
-zoomiter.drawFractal()
-zoomiter.drawIteration()
-zoomiter.click = (c) =>
-    zoomiter.zoomIn(c)
+    # zoomiter
+    zoomiter = new Canvas("zoomiter")
     zoomiter.drawFractal()
     zoomiter.drawIteration()
-zoomiter.middleClick = (c) =>
-    zoomiter.zoomOut(c)
-    zoomiter.drawFractal()
-    zoomiter.drawIteration()
-zoomiter.move = (c) =>
-    zoomiter.drawIteration()
-document.getElementById("zoomiter-reset").onclick = =>
-    zoomiter.zoom = zoomiter.width/4
-    zoomiter.center = new Complex(0, 0)
-    zoomiter.draw()
+    zoomiter.click = (c) =>
+        zoomiter.zoomIn(c)
+        zoomiter.drawFractal()
+        zoomiter.drawIteration()
+    zoomiter.middleClick = (c) =>
+        zoomiter.zoomOut(c)
+        zoomiter.drawFractal()
+        zoomiter.drawIteration()
+    zoomiter.move = (c) =>
+        zoomiter.drawIteration()
+    document.getElementById("zoomiter-reset").onclick = =>
+        zoomiter.zoom = zoomiter.width/4
+        zoomiter.center = new Complex(0, 0)
+        zoomiter.draw()
+
+    # sandbox
+    sandbox = new Canvas("sandbox")
+    sandbox.draw()
+
+    #sandbox.click = (c) =>
+    #    sandbox.zoomIn(c)
+    #    sandbox.draw()
+
+    document.getElementById("sandbox-reset").onclick = =>
+        sandbox.zoom = sandbox.width/4
+        sandbox.center = new Complex(0, 0)
+        sandbox.draw()
+    document.getElementById("sandbox-slider").oninput = ->
+        sandbox.depth = this.value
+        sandbox.drawIteration()
+        sandbox.drawMarkers()
+    sandbox.move = (c) =>
+        sandbox.drawIteration()
+        sandbox.drawMarkers()
+
+Images.load([
+    "bunny.jpg"
+    "flag.png"
+])

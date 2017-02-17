@@ -14,12 +14,12 @@
         }
 
         body {
-            max-width: 40em;
+            max-width: 800px;
             margin: auto;
         }
         .example {
             background: lightyellow;
-            padding: 1em;
+            padding: 1em 0;
         }
         .example p, .example button {
             font-weight: bold;
@@ -27,13 +27,21 @@
         }
         .layers {
             position: relative;
-            width: 400;
-            height: 400;
+            width: 100%;
+            width: 800px;
+            height: 800px;
         }
         canvas {
             position: absolute;
             top: 0;
             left: 0;
+            width: 800px;
+            height: 800px;
+        }
+
+        .big {
+            width: 800px;
+            height: 800px;
         }
         </style>
     </head>
@@ -42,8 +50,9 @@
 
         <p>Maybe you've seen an image of the Mandelbrot Set before. It's trippy, it's wonderous, it's beautiful. Here it is, have a look:</p>
 
-        <div class="example" id="plain">
+        <div class="example">
             <p>Click to zoom. <button type="button" id="plain-reset">Reset</button></p>
+            <canvas id="plain" class="big">
         </div>
 
         <p>So, you just zoomed in <span id="zoomcount"></span>. If every human on earth did that, about <span id="zoompersons"></span> of them would end up at your location. <span id="zoomremark"></span></p>
@@ -52,59 +61,67 @@
 
         <p>To explain, let's have a look at good ol' number line:</p>
 
-        <div class="example" id="real">
+        <div class="example">
             <p>Move your mouse.</p>
+            <canvas id="real">
         </div>
 
         <p>Boring, right? Yeah. But what if we allow our numbers to go *up*, as well?</p>
 
-        <div class="example" id="complex">
+        <div class="example">
             <p>Move your mouse. Again!</p>
+            <canvas id="complex">
         </div>
 
         <p>Now the number you select has a red, horizontal component, like before, but also a blue, vertical one. Numbers like these are called... *complex numbers*! AAAAAAAAHHHH! Wait, let me tell you a secret: *whisper* They are not totally not scary at all! When adding two of them, you just put their arrows together and BAM! You get their sum! (DEMO HERE)</p>
 
         <p>The only thing that's a little weird about them is how multiplication works. You know how you can *square* a normal number? Multiplying it by itself? Like, saying 3^2, and it means 3*3? Well, you can do the same thing to complex numbers. Have a look:</p>
 
-        <div class="example" id="square">
+        <div class="example">
             <p>Your mouse. Move it.</p>
+            <canvas id="square">
         </div>
 
         <p>Except that this looks like a broken clock with fat, ugly handlebars, what happens? (To get the square of a complex number, you double its angle to the x-axis and square its length. ADD THESE MEASURES TO THE DEMO)</p>
 
         <p>We're ready for the last step. We take our little number c and square, like before, and then, we add c to the result. The result is the number c^2+c:</p>
 
-        <div class="example" id="step">
+        <div class="example">
             <p>Your mouse move you must.</p>
+            <canvas id="step">
         </div>
 
         <p>And NOW the exciting stuff happens! What if we repeat this process? After calculating our c^2+c, we square it *again*, and add c *again*? (PROBABLY NEEDS AN INBETWEEN DEMO) And do this forever and ever and ever? Look:</p>
 
-        <div class="example" id="iteration">
+        <div class="example">
             <p>Move ya mouse, yo! Can you find a spiral? A star? A triangle?</p>
+            <canvas id="iteration">
         </div>
 
         <p>Whaaaat. Crazy patterns everywhere!</p>
         <p>If you play with the demo again, you can see that for some starting points, the blue path runs away, off-screen. And for others, it swirled around and stayed on-screen. In the next demo, you can click and scribble. If the path at the current mouse position leaves the screen, we will color the starting point red, otherwise black.</p>
 
-        <div class="example" id="scribble">
+        <div class="example">
             <p>Scribble, like tracing a coin behind a sheet of paper. <button type="button" id="scribble-reset">Reset</button></p>
+            <canvas id="scribble">
         </div>
 
         <p>Why, HELL~O! You drew yourself a teeny tiny Mandelbrot set!</p>
 
         <p>Let's add more color. So far, we only used red (for when the path leaves) and black (for when the path stays). Let's say, when the path leaves after one step, we'll color that pixel X. When it leaves after two steps, we'll color it X. And so on. (ADD VISUALIZATION OF THE PALETTE) Try it:</p>
 
-        <div class="example" id="color">
+        <div class="example">
             <p>Scribble. <button type="button" id="color-reset">Reset</button></p>
+            <canvas id="color">
         </div>
 
         <p>And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.</p>
 
         <p>Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.</p>
 
-        <div class="example" id="zoomiter">
+        <div class="example">
             <p>Click to zoom. Middle-click to zoom out. <button type="button" id="zoomiter-reset">Reset</button></p>
+            <canvas id="zoomiter">
         </div>
 
         <p>Some fun things you can try:</p>
@@ -125,10 +142,24 @@
 
 
 
-        <div class="example" id="exp">
+        <div class="example">
             <p>Click to zoom</p>
             <button type="button" id="exp-reset">Reset</button>
             <span>f_c(z) = z^n+c, where n =</span> <span>0</span><input type="range" id="exp-exp" min="0" max="5" value="2" step="0.1"><span>5</span>
+            <canvas id="exp">
+        </div>
+
+        <p>Huge big sandbox:</p>
+
+        <div class="example">
+            <p>Click to zoom</p>
+            <button type="button" id="sandbox-reset">Reset</button>
+            <select id="sandbox-f">
+                <option value="z^2+c">z^2+c</option>
+                <option value="(z*)^2+c">(z*)^2+c</option>
+            </select>
+            <canvas id="sandbox"></canvas>
+            <input type="range" id="sandbox-slider" min="0" max="50" value="5" style="width: 800px">
         </div>
     </body>
 </html>
