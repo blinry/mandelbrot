@@ -20,10 +20,12 @@
         .demo {
             background: lightyellow;
             padding: 1em 0;
-        }
-        .demo p, .demo button {
             font-weight: bold;
+            min-height: 800px;
+        }
+        .demo p {
             font-size: 120%;
+            text-align: center;
         }
         .layers {
             position: relative;
@@ -58,32 +60,38 @@
 
         <p>But what does this image mean? How is it constructed?</p>
 
-        <p>To explain, let's have a look at good ol' number line:</p>
+        <h2>What is the Mandelbrot Set?</h2>
+
+        <!--
 
         <div class="demo" id="real">
             <p>Drag the flag.</p>
         </div>
 
         <p>Boring, right? Yeah. But what if we allow our numbers to go *up*, as well?</p>
+        -->
+
+        <p>To explain, consider the following situation: You have a bunny, and a flag. You can place the flag everywhere you want, while the bunny has its own free will. It's still asleep... z z Z Z Z.</p>
 
         <div class="demo" id="complex">
-            <p>Move your mouse. Again!</p>
+            <p>Drag the flag around. No surprises here.</p>
         </div>
 
-        <p>Now the number you select has a red, horizontal component, like before, but also a blue, vertical one. Numbers like these are called... *complex numbers*! AAAAAAAAHHHH! Wait, let me tell you a secret: *whisper* They are not totally not scary at all! When adding two of them, you just put their arrows together and BAM! You get their sum! (DEMO HERE)</p>
+        <!--<p>Now the number you select has a red, horizontal component, like before, but also a blue, vertical one. Numbers like these are called... *complex numbers*! AAAAAAAAHHHH! Wait, let me tell you a secret: *whisper* They are not totally not scary at all! When adding two of them, you just put their arrows together and BAM! You get their sum! (DEMO HERE)</p>
 
-        <p>The only thing that's a little weird about them is how multiplication works. You know how you can *square* a normal number? Multiplying it by itself? Like, saying 3^2, and it means 3*3? Well, you can do the same thing to complex numbers. Have a look:</p>
+        <p>The only thing that's a little weird about them is how multiplication works. You know how you can *square* a normal number? Multiplying it by itself? Like, saying 3^2, and it means 3*3? Well, you can do the same thing to complex numbers. Have a look:</p>-->
+        <p>Ah, the bunny woke up! The first thing it will always do is walk to the position of the flag. We call this the *first step*. All steps after that consist of two movements: First, it will *hop*! The bunny has a very particular way of hopping: It looks at the angle it has to the right-direction and hops in such a way that its angle doubles. It also looks at the distance to its sleeping position and hops so that its distance to it *squares*. Intuitively, if its distance to its sleeping position is less than 1, it will hop a little bit closer, and if the distance islarger than 1, it will hop a little bit farther away.</p>
 
         <div class="demo" id="square">
-            <p>Your mouse. Move it.</p>
+            <p>Pull the step slider up. Step 1 is the initial walking. Step 2 is the hop! Then drag the flag around.</p>
         </div>
 
-        <p>Except that this looks like a broken clock with fat, ugly handlebars, what happens? (To get the square of a complex number, you double its angle to the x-axis and square its length. ADD THESE MEASURES TO THE DEMO)</p>
+        <!--<p>Except that this looks like a broken clock with fat, ugly handlebars, what happens? (To get the square of a complex number, you double its angle to the x-axis and square its length. ADD THESE MEASURES TO THE DEMO)</p>-->
 
-        <p>We're ready for the last step. We take our little number c and square, like before, and then, we add c to the result. The result is the number c^2+c:</p>
+        <p>And after that, it will walk again, in the same direction and distance it initially walked towards the flag:</p>
 
         <div class="demo" id="step">
-            <p>Your mouse move you must.</p>
+            <p>Pull the slider up. Step 3 is another walking.</p>
         </div>
 
         <p>And NOW the exciting stuff happens! What if we repeat this process? After calculating our c^2+c, we square it *again*, and add c *again*? (PROBABLY NEEDS AN INBETWEEN DEMO) And do this forever and ever and ever? Look:</p>

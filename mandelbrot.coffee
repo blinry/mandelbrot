@@ -64,8 +64,13 @@ class Complex
 class Marker
     constructor: (@pos, @name, @color) ->
         @draggable = false
+
+        # image offset drawn on pos
         @ox = Images.get(@name).width/2
         @oy = Images.get(@name).height/2
+        # image offset defining dragging center
+        @dx = Images.get(@name).width/2
+        @dy = Images.get(@name).height/2
         # nop
 
 class Mandelbrot
@@ -93,16 +98,18 @@ class Mandelbrot
                 return i
         return -1
 
-class Square
+class Steps
     step: (z, c) ->
-        if z.r == 0 and z.i == 0
-            c
+        @squareNext = not @squareNext
+        if @squareNext
+            z.add(c)
         else
             z.pow(2)
-    iterate: (c) ->
+    iterate: (c, steps=0) ->
         z = new Complex(0,0)
+        @squareNext = false
 
-        for i in [0..0]
+        for i in [0..steps*2]
             z = @step(z, c)
         return -1
 
@@ -162,7 +169,8 @@ class Canvas
         @drawIteration = true
         @restrictToReal = false
 
-        @depth = 50
+        @depth = 100
+        @maxDepth = 100
         @fractal = new Mandelbrot()
         @palette = new Palette("gray")
 
@@ -170,6 +178,9 @@ class Canvas
         # 1 = zoom only
         # 2 = step slider
         @uiLevel = 9
+
+        @zoomHook = ->
+            # nop
     init: (id) ->
         div = document.getElementById(id)
         #instructions = document.createElement("p")
@@ -205,10 +216,15 @@ class Canvas
         timeSlider = document.createElement("input")
         timeSlider.setAttribute("type", "range")
         timeSlider.setAttribute("min", "0")
-        timeSlider.setAttribute("max", "100")
+        timeSlider.setAttribute("max", @maxDepth)
+        if @halfSteps
+            timeSlider.setAttribute("step", 0.5)
         timeSlider.setAttribute("value", @depth)
         timeSlider.setAttribute("style", "width: 600px")
         timeSlider.oninput = =>
+            # the first half-step does nothing
+            if timeSlider.value == "0.5"
+                timeSlider.value = "1"
             @depth = timeSlider.value
             stepCounter.innerHTML = @depth+" steps"
             @draw()
@@ -232,9 +248,6 @@ class Canvas
 
         @data = @bg.getImageData(0, 0, @width, @height)
 
-        @zoom = @width/4
-        @zoomCount = 0
-        @center = new Complex(0,0)
         @mouse = new Complex(0,0)
 
         # markers
@@ -243,7 +256,9 @@ class Canvas
             @flag.pos.i = 0
         @flag.draggable = true
         @flag.ox = 2
-        @flag.oy = Images.get("flag.png").height
+        @flag.oy = Images.get("flag.png").height-2
+        @flag.dx = Images.get("flag.png").width/2
+        @flag.dy = Images.get("flag.png").height/4
         @bunny = new Marker(new Complex(0,0), "bunny.png", new Color(180, 80, 50, 1))
         @markers = [@bunny, @flag]
 
@@ -259,7 +274,7 @@ class Canvas
                 if @drawIteration
                     for marker in @markers
                         if marker.draggable
-                            if @mouse.sub(marker.pos).length2() < 0.06
+                            if @mouseOverMarker(marker)
                                 @dragging = marker
                                 @fgCanvas.style.cursor = "move"
 
@@ -284,21 +299,52 @@ class Canvas
             @mouse = @toWorld(event.clientX-rect.left, event.clientY-rect.top)
             if @drawIteration
                 if @dragging
+                    offset = new Complex((-@dragging.dx+@dragging.ox)/@zoom, -(-@dragging.dy+@dragging.oy)/@zoom)
+                    @dragging.pos = @mouse.add(offset)
                     if @restrictToReal
-                        @dragging.pos = @mouse
                         @dragging.pos.i = 0
-                    else
-                        @dragging.pos = @mouse
                 else
                     for marker in @markers
                         if marker.draggable
-                            if @mouse.sub(marker.pos).length2() < 0.06
+                            if @mouseOverMarker(marker)
                                 @fgCanvas.style.cursor = "pointer"
                             else
                                 @fgCanvas.style.cursor = "auto"
             @draw()
 
-        @draw(true)
+        touchHandler = (event) =>
+            touches = event.changedTouches
+            first = touches[0]
+            type = ""
+            switch event.type
+                when "touchstart"
+                    type = "mousedown"
+                when "touchmove"
+                    type = "mousemove"
+                when "touchend"
+                    type = "mouseup"
+                else
+                    return
+
+            # initMouseEvent(type, canBubble, cancelable, view, clickCount, 
+            #                screenX, screenY, clientX, clientY, ctrlKey, 
+            #                altKey, shiftKey, metaKey, button, relatedTarget);
+
+            simulatedEvent = document.createEvent("MouseEvent")
+            simulatedEvent.initMouseEvent(type, true, true, window, 1,
+                                          first.screenX, first.screenY,
+                                          first.clientX, first.clientY, false,
+                                          false, false, false, 0, null)
+
+            first.target.dispatchEvent(simulatedEvent)
+            event.preventDefault()
+
+        @fgCanvas.ontouchstart = touchHandler
+        @fgCanvas.ontouchmove = touchHandler
+        @fgCanvas.ontouchend = touchHandler
+        @fgCanvas.ontouchcancel = touchHandler
+
+        @zoomReset()
 
     toWorld: (x, y) ->
         r = (x-@width/2)/@zoom+@center.r
@@ -308,6 +354,12 @@ class Canvas
         x = (c.r-@center.r)*@zoom+@width/2
         y = -(c.i-@center.i)*@zoom+@height/2
         return [x, y]
+    mouseOverMarker: (marker) ->
+        [x, y] = @fromWorld(marker.pos)
+        [mx, my] = @fromWorld(@mouse)
+        x = x+marker.dx-marker.ox
+        y = y+marker.dy-marker.oy
+        return Math.pow(x-mx, 2) + Math.pow(y-my, 2) < Math.pow(25, 2)
     zoomIn: (c) ->
         @zoom *= 2
         @zoomCount++
@@ -321,7 +373,7 @@ class Canvas
         @draw(true)
         @zoomHook(@zoomCount)
     zoomReset: ->
-        @zoom = @width/4
+        @zoom = @width/4.2
         @center = new Complex(0, 0)
         @draw(true)
         @zoomCount = 0
@@ -544,7 +596,6 @@ class Canvas
             [x1, y1] = @fromWorld(new Complex(-2,-2))
             [x2, y2] = @fromWorld(new Complex(2,2))
 
-
             @fg.lineWidth = 1
             @fg.strokeStyle = "black"
 
@@ -559,9 +610,15 @@ class Canvas
             @fg.stroke()
 
             @fg.setLineDash([5, 5])
+
+            @fg.beginPath()
+            @fg.arc(ox, oy, @zoom, 0, 2*Math.PI, false)
+            @fg.stroke()
+
             @fg.beginPath()
             @fg.arc(ox, oy, @zoom*2, 0, 2*Math.PI, false)
             @fg.stroke()
+
             @fg.setLineDash([])
 
             @fg.textAlign = "center"
@@ -591,9 +648,13 @@ class Canvas
 
             c = @flag.pos
             @bunny.pos = new Complex(0, 0)
+            @fractal.squareNext = true
 
             if @depth > 0
-                for i in [0..@depth-1]
+                stepCount = @depth
+                if @halfSteps
+                    stepCount = @depth*2
+                for i in [1..stepCount]
                     [x1, y1] = @fromWorld(@bunny.pos)
                     z2 = @fractal.step(@bunny.pos, c)
                     [x2, y2] = @fromWorld(z2)
@@ -603,9 +664,9 @@ class Canvas
                     @fg.moveTo(x1, y1)
                     @fg.lineTo(x2, y2)
                     @fg.stroke()
-                    @fg.beginPath()
-                    @fg.arc(x2, y2, 2, 0, 2*Math.PI, false)
-                    @fg.fill()
+                    #@fg.beginPath()
+                    #@fg.arc(x2, y2, 2, 0, 2*Math.PI, false)
+                    #@fg.fill()
 
                     @bunny.pos = z2
 
@@ -614,10 +675,10 @@ class Canvas
 
             for marker in @markers
                 [x, y] = @fromWorld(marker.pos)
-                @fg.fillStyle = marker.color.string()
-                @fg.beginPath()
-                @fg.arc(x, y, 5, 0, 2*Math.PI, false)
-                @fg.fill()
+                #@fg.fillStyle = marker.color.string()
+                #@fg.beginPath()
+                #@fg.arc(x, y, 5, 0, 2*Math.PI, false)
+                #@fg.fill()
                 i = Images.get(marker.name)
                 @fg.drawImage(i, x-marker.ox, y-marker.oy)
 
@@ -653,27 +714,33 @@ Images.onload = ->
                     else
                         zr.innerHTML = ""
 
-            when "real"
-                canvas.drawFractal = false
-                canvas.depth = 0
-                canvas.restrictToReal = true
-                canvas.uiLevel = 0
+            #when "real"
+            #    canvas.drawFractal = false
+            #    canvas.depth = 0
+            #    canvas.restrictToReal = true
+            #    canvas.uiLevel = 0
             when "complex"
                 canvas.drawFractal = false
                 canvas.depth = 0
                 canvas.uiLevel = 0
             when "square"
                 canvas.drawFractal = false
-                canvas.depth = 2
-                canvas.fractal = new Square()
-                canvas.uiLevel = 0
+                canvas.depth = 0
+                canvas.maxDepth = 1.5
+                canvas.halfSteps = true
+                canvas.fractal = new Steps()
+                canvas.uiLevel = 2
             when "step"
                 canvas.drawFractal = false
-                canvas.depth = 2
-                canvas.uiLevel = 0
+                canvas.depth = 0
+                canvas.maxDepth = 2
+                canvas.halfSteps = true
+                canvas.fractal = new Steps()
+                canvas.uiLevel = 2
             when "iteration"
                 canvas.drawFractal = false
                 canvas.depth = 2
+                canvas.maxDepth = 20
         canvas.init(id)
     ## plain
     #zoomCount = 0
