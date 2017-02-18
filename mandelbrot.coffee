@@ -231,6 +231,11 @@ class Canvas
             @draw()
             @updateHook()
 
+        paletteCanvas = document.createElement("canvas")
+        paletteCanvas.setAttribute("width", @width)
+        paletteCanvas.setAttribute("height", 20)
+        paletteCanvas.setAttribute("style", "width: "+@width+" height: "+20+" ")
+
         #div.appendChild(instructions)
         div.appendChild(topControls)
         div.appendChild(layers)
@@ -242,11 +247,13 @@ class Canvas
         if @stepControls
             bottomControls.appendChild(timeSlider)
             bottomControls.appendChild(stepCounter)
+            bottomControls.appendChild(paletteCanvas)
         layers.appendChild(@bgCanvas)
         layers.appendChild(@fgCanvas)
 
         @bg = @bgCanvas.getContext("2d")
         @fg = @fgCanvas.getContext("2d")
+        @slider = paletteCanvas.getContext("2d")
 
         @data = @bg.getImageData(0, 0, @width, @height)
 
@@ -367,6 +374,7 @@ class Canvas
         @fgCanvas.ontouchcancel = touchHandler
 
         @zoomReset()
+        @drawSlider()
 
     toWorld: (x, y) ->
         r = (x-@width/2)/@zoom+@center.r
@@ -583,6 +591,16 @@ class Canvas
     #    #@fg.arc(ox, oy, @zoom*2+@fg.lineWidth/2, 0, 2*Math.PI, false)
     #    @fg.stroke()
 
+    drawSlider: ->
+        w = @slider.canvas.clientWidth
+        h = @slider.canvas.clientHeight
+        for x in [0..w-1]
+            for y in [0..h-1]
+                @slider.fillStyle = @palette.color(x/w*@maxDepth).string()
+                #console.log(@slider.fillStyle)
+                @slider.fillRect(x, 0, 1, h)
+                #@slider.fill()
+
     draw: (drawBg=false) ->
         if drawBg and @drawFractal
             @clearBg()
@@ -782,11 +800,13 @@ Images.onload = ->
                 canvas.drawTrace = true
                 canvas.depth = 10
                 canvas.palette = new Palette("bw")
+                canvas.stepControls = true
             when "color"
                 canvas.drawFractal = false
                 canvas.drawTrace = true
                 canvas.depth = 10
                 canvas.palette = new Palette("colordemo")
+                canvas.stepControls = true
             when "sandbox"
                 canvas.zoomControls = true
                 canvas.stepControls = true
