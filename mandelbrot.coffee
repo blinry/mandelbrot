@@ -153,16 +153,16 @@ class Palette
             when "rainbow"
                 return new Color((i).mod(360), 80, 60, 1)
             when "bw"
-                return new Color(0, 80, 60, 1)
+                return new Color(0, 100, 100, 1)
             when "zebra"
                 return new Color(i.mod(2)*180+90, 100, 40, 1)
             when "colordemo"
-                return new Color((i*10).mod(360), 80, 60, 1)
+                return new Color((i*50).mod(360), 80, 60, 1)
 
 class Canvas
     constructor: ->
-        @width = 800
-        @height = 800
+        @width = 500
+        @height = 500
 
         @drawFractal = true
         @drawAxes = true
@@ -173,13 +173,14 @@ class Canvas
         @maxDepth = 100
         @fractal = new Mandelbrot()
         @palette = new Palette("gray")
+        @traceSize = 5
 
-        # 0 = nothing
-        # 1 = zoom only
-        # 2 = step slider
-        @uiLevel = 9
+        @zoomControls = false
+        @stepControls = false
 
         @zoomHook = ->
+            # nop
+        @updateHook = ->
             # nop
     init: (id) ->
         div = document.getElementById(id)
@@ -211,7 +212,7 @@ class Canvas
             @zoomOut(@flag.pos)
 
         stepCounter = document.createElement("span")
-        stepCounter.innerHTML = @depth+" steps"
+        stepCounter.innerHTML = "Step "+@depth
 
         timeSlider = document.createElement("input")
         timeSlider.setAttribute("type", "range")
@@ -220,26 +221,27 @@ class Canvas
         if @halfSteps
             timeSlider.setAttribute("step", 0.5)
         timeSlider.setAttribute("value", @depth)
-        timeSlider.setAttribute("style", "width: 600px")
+        timeSlider.setAttribute("style", "width: "+@width+"px")
         timeSlider.oninput = =>
             # the first half-step does nothing
             if timeSlider.value == "0.5"
-                timeSlider.value = "1"
+                timeSlider.value = "0"
             @depth = timeSlider.value
-            stepCounter.innerHTML = @depth+" steps"
+            stepCounter.innerHTML = "Step "+@depth
             @draw()
+            @updateHook()
 
         #div.appendChild(instructions)
         div.appendChild(topControls)
         div.appendChild(layers)
         div.appendChild(bottomControls)
-        if @uiLevel > 0
+        if @zoomControls
             topControls.appendChild(resetButton)
             topControls.appendChild(zoomInButton)
             topControls.appendChild(zoomOutButton)
-        if @uiLevel > 1
-            topControls.appendChild(timeSlider)
-            topControls.appendChild(stepCounter)
+        if @stepControls
+            bottomControls.appendChild(timeSlider)
+            bottomControls.appendChild(stepCounter)
         layers.appendChild(@bgCanvas)
         layers.appendChild(@fgCanvas)
 
@@ -290,7 +292,7 @@ class Canvas
                 @mousedown = false
                 if @dragging
                     @dragging = undefined
-                else if @uiLevel > 0
+                else if @zoomControls
                     @zoomIn(@mouse)
                 @fgCanvas.style.cursor = "auto"
 
@@ -303,6 +305,8 @@ class Canvas
                     @dragging.pos = @mouse.add(offset)
                     if @restrictToReal
                         @dragging.pos.i = 0
+
+                    @updateHook()
                 else
                     for marker in @markers
                         if marker.draggable
@@ -310,6 +314,24 @@ class Canvas
                                 @fgCanvas.style.cursor = "pointer"
                             else
                                 @fgCanvas.style.cursor = "auto"
+            if @drawTrace and @dragging
+                for dx in [-@traceSize..@traceSize]
+                    for dy in [-@traceSize..@traceSize]
+                        [x, y] = @fromWorld(@flag.pos)
+                        xx = x+dx
+                        yy = y+dy
+                        xx = Math.floor(xx)
+                        yy = Math.floor(yy)
+                        offset = (@width*yy+xx)*4
+                        cc = @toWorld(xx, yy)
+                        i = @fractal.iterate(cc, 20)
+                        col = @palette.color(i)
+                        [r,g,b,a] = col.rgba()
+                        @data.data[offset++] = r
+                        @data.data[offset++] = g
+                        @data.data[offset++] = b
+                        @data.data[offset++] = a
+                @bg.putImageData(@data, 0, 0)
             @draw()
 
         touchHandler = (event) =>
@@ -366,216 +388,200 @@ class Canvas
         @center = @center.add(c).div(2)
         @draw(true)
         @zoomHook(@zoomCount)
+        @updateHook()
     zoomOut: (c) ->
         @zoom /= 2
         @zoomCount--
         @center = @center.mul(2).sub(c)
         @draw(true)
         @zoomHook(@zoomCount)
+        @updateHook()
     zoomReset: ->
         @zoom = @width/4.2
         @center = new Complex(0, 0)
         @draw(true)
         @zoomCount = 0
         @zoomHook(@zoomCount)
-    addPoint: (c, size) ->
-        if @mousedown
-            for dx in [-size..size]
-                for dy in [-size..size]
-                    [x, y] = @fromWorld(c)
-                    xx = x+dx
-                    yy = y+dy
-                    xx = Math.floor(xx)
-                    yy = Math.floor(yy)
-                    offset = (@width*yy+xx)*4
-                    cc = @toWorld(xx, yy)
-                    i = @fractal.iterate(cc, 20)
-                    col = @palette.color(i)
-                    [r,g,b,a] = col.rgba()
-                    @data.data[offset++] = r
-                    @data.data[offset++] = g
-                    @data.data[offset++] = b
-                    @data.data[offset++] = a
-            @bg.putImageData(@data, 0, 0)
+        @updateHook()
     clearBg: ->
         @bg.clearRect 0, 0, @width, @height
         @data = @bg.getImageData(0, 0, @width, @height)
     clearFg: ->
         @fg.clearRect 0, 0, @width, @height
-    drawReal: ->
-        @clearFg()
+    #drawReal: ->
+    #    @clearFg()
 
-        [ox, oy] = @fromWorld(new Complex(0,0))
-        [x1, y1] = @fromWorld(new Complex(-2,0))
-        [x2, y2] = @fromWorld(new Complex(2,0))
-        [mx, my] = @fromWorld(@mouse)
+    #    [ox, oy] = @fromWorld(new Complex(0,0))
+    #    [x1, y1] = @fromWorld(new Complex(-2,0))
+    #    [x2, y2] = @fromWorld(new Complex(2,0))
+    #    [mx, my] = @fromWorld(@mouse)
 
-        @fg.lineWidth = 1
-        @fg.strokeStyle = "black"
+    #    @fg.lineWidth = 1
+    #    @fg.strokeStyle = "black"
 
-        @fg.beginPath()
-        @fg.moveTo(x1, oy)
-        @fg.lineTo(x2, oy)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(x1, oy)
+    #    @fg.lineTo(x2, oy)
+    #    @fg.stroke()
 
-        @fg.lineWidth = 5
-        @fg.strokeStyle = "red"
+    #    @fg.lineWidth = 5
+    #    @fg.strokeStyle = "red"
 
-        @fg.beginPath()
-        @fg.moveTo(ox, oy)
-        @fg.lineTo(mx, oy)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(ox, oy)
+    #    @fg.lineTo(mx, oy)
+    #    @fg.stroke()
 
-        @fg.textAlign = "center"
-        @fg.font = "20px sans-serif"
-        @fg.fillStyle = "red"
-        @fg.fillText(@mouse.r.toFixed(2), (mx+ox)/2, oy-5)
-    drawComplex: ->
-        @fg.clearRect 0, 0, @width, @height
+    #    @fg.textAlign = "center"
+    #    @fg.font = "20px sans-serif"
+    #    @fg.fillStyle = "red"
+    #    @fg.fillText(@mouse.r.toFixed(2), (mx+ox)/2, oy-5)
+    #drawComplex: ->
+    #    @fg.clearRect 0, 0, @width, @height
 
-        [ox, oy] = @fromWorld(new Complex(0,0))
-        [mx, my] = @fromWorld(@mouse)
+    #    [ox, oy] = @fromWorld(new Complex(0,0))
+    #    [mx, my] = @fromWorld(@mouse)
 
-        @fg.lineWidth = 5
+    #    @fg.lineWidth = 5
 
-        @fg.strokeStyle = "black"
-        @fg.beginPath()
-        @fg.moveTo(ox, oy)
-        @fg.lineTo(mx, my)
-        @fg.stroke()
+    #    @fg.strokeStyle = "black"
+    #    @fg.beginPath()
+    #    @fg.moveTo(ox, oy)
+    #    @fg.lineTo(mx, my)
+    #    @fg.stroke()
 
-        @fg.lineWidth = 2
-        @fg.strokeStyle = "red"
-        @fg.setLineDash([5, 5])
+    #    @fg.lineWidth = 2
+    #    @fg.strokeStyle = "red"
+    #    @fg.setLineDash([5, 5])
 
-        @fg.beginPath()
-        @fg.moveTo(ox, my)
-        @fg.lineTo(mx, my)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(ox, my)
+    #    @fg.lineTo(mx, my)
+    #    @fg.stroke()
 
-        @fg.strokeStyle = "blue"
+    #    @fg.strokeStyle = "blue"
 
-        @fg.beginPath()
-        @fg.moveTo(mx, oy)
-        @fg.lineTo(mx, my)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(mx, oy)
+    #    @fg.lineTo(mx, my)
+    #    @fg.stroke()
 
-        @fg.setLineDash([])
+    #    @fg.setLineDash([])
 
-        @fg.textAlign = "center"
-        @fg.font = "20px sans-serif"
-        text = @mouse.r
-        @fg.fillStyle = "red"
-        @fg.fillText(@mouse.r.toFixed(2), (mx+ox)/2, my-5)
+    #    @fg.textAlign = "center"
+    #    @fg.font = "20px sans-serif"
+    #    text = @mouse.r
+    #    @fg.fillStyle = "red"
+    #    @fg.fillText(@mouse.r.toFixed(2), (mx+ox)/2, my-5)
 
-        @fg.fillStyle = "blue"
-        @fg.textAlign = "left"
-        @fg.fillText(@mouse.i.toFixed(2)+" i", mx+5, (my+ox)/2+5)
+    #    @fg.fillStyle = "blue"
+    #    @fg.textAlign = "left"
+    #    @fg.fillText(@mouse.i.toFixed(2)+" i", mx+5, (my+ox)/2+5)
 
-        #@fg.fillText(text, mx+5, my-5)
-        #@fg.fillStyle = "black"
-        #offset = @fg.measureText(text).width
-        #if @mouse.i >= 0
-        #    text = "+"
-        #else
-        #    text = "-"
-        #@fg.fillText(text, mx+5+offset, my-5)
-        #@fg.fillStyle = "blue"
-        #offset2 = @fg.measureText(text).width
-        #text = @mouse.i+"i"
-        #@fg.fillText(text, mx+5+offset+offset2, my-5)
-    drawSquare: ->
-        @fg.clearRect 0, 0, @width, @height
+    #    #@fg.fillText(text, mx+5, my-5)
+    #    #@fg.fillStyle = "black"
+    #    #offset = @fg.measureText(text).width
+    #    #if @mouse.i >= 0
+    #    #    text = "+"
+    #    #else
+    #    #    text = "-"
+    #    #@fg.fillText(text, mx+5+offset, my-5)
+    #    #@fg.fillStyle = "blue"
+    #    #offset2 = @fg.measureText(text).width
+    #    #text = @mouse.i+"i"
+    #    #@fg.fillText(text, mx+5+offset+offset2, my-5)
+    #drawSquare: ->
+    #    @fg.clearRect 0, 0, @width, @height
 
-        [ox, oy] = @fromWorld(new Complex(0,0))
-        [mx, my] = @fromWorld(@mouse)
-        [mx2, my2] = @fromWorld(@mouse.pow(2))
+    #    [ox, oy] = @fromWorld(new Complex(0,0))
+    #    [mx, my] = @fromWorld(@mouse)
+    #    [mx2, my2] = @fromWorld(@mouse.pow(2))
 
-        @fg.beginPath()
-        @fg.arc(ox, oy, 1*@zoom, 0, 2*Math.PI, false)
-        @fg.stroke()
-        @fg.beginPath()
-        @fg.arc(ox, oy, 2*@zoom, 0, 2*Math.PI, false)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.arc(ox, oy, 1*@zoom, 0, 2*Math.PI, false)
+    #    @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.arc(ox, oy, 2*@zoom, 0, 2*Math.PI, false)
+    #    @fg.stroke()
 
-        @fg.lineWidth = 5
-        @fg.strokeStyle = "black"
+    #    @fg.lineWidth = 5
+    #    @fg.strokeStyle = "black"
 
-        @fg.beginPath()
-        @fg.moveTo(ox, ox)
-        @fg.lineTo(mx, my)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(ox, ox)
+    #    @fg.lineTo(mx, my)
+    #    @fg.stroke()
 
-        @fg.beginPath()
-        @fg.moveTo(ox, ox)
-        @fg.lineTo(mx2, my2)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(ox, ox)
+    #    @fg.lineTo(mx2, my2)
+    #    @fg.stroke()
 
-        @fg.textAlign = "left"
-        @fg.font = "20px sans-serif"
-        @fg.fillStyle = "black"
-        @fg.fillText("c", mx+5, my-5)
+    #    @fg.textAlign = "left"
+    #    @fg.font = "20px sans-serif"
+    #    @fg.fillStyle = "black"
+    #    @fg.fillText("c", mx+5, my-5)
 
-        @fg.textAlign = "left"
-        @fg.font = "20px sans-serif"
-        @fg.fillStyle = "black"
-        @fg.fillText("c^2", mx2+5, my2-5)
-    drawStep: ->
-        @fg.clearRect 0, 0, @width, @height
+    #    @fg.textAlign = "left"
+    #    @fg.font = "20px sans-serif"
+    #    @fg.fillStyle = "black"
+    #    @fg.fillText("c^2", mx2+5, my2-5)
+    #drawStep: ->
+    #    @fg.clearRect 0, 0, @width, @height
 
-        [ox, oy] = @fromWorld(new Complex(0,0))
+    #    [ox, oy] = @fromWorld(new Complex(0,0))
 
-        [mx, my] = @fromWorld(@mouse)
-        [mx2, my2] = @fromWorld(@mouse.pow(2))
-        [mx3, my3] = @fromWorld(@mouse.pow(2).add(@mouse))
+    #    [mx, my] = @fromWorld(@mouse)
+    #    [mx2, my2] = @fromWorld(@mouse.pow(2))
+    #    [mx3, my3] = @fromWorld(@mouse.pow(2).add(@mouse))
 
-        @fg.lineWidth = 5
-        @fg.strokeStyle = "black"
+    #    @fg.lineWidth = 5
+    #    @fg.strokeStyle = "black"
 
-        @fg.beginPath()
-        @fg.moveTo(ox, ox)
-        @fg.lineTo(mx, my)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(ox, ox)
+    #    @fg.lineTo(mx, my)
+    #    @fg.stroke()
 
-        @fg.beginPath()
-        @fg.moveTo(ox, ox)
-        @fg.lineTo(mx2, my2)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(ox, ox)
+    #    @fg.lineTo(mx2, my2)
+    #    @fg.stroke()
 
-        @fg.beginPath()
-        @fg.moveTo(mx2, my2)
-        @fg.lineTo(mx3, my3)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(mx2, my2)
+    #    @fg.lineTo(mx3, my3)
+    #    @fg.stroke()
 
-        @fg.textAlign = "left"
-        @fg.font = "20px sans-serif"
-        @fg.fillStyle = "black"
-        @fg.fillText("c", mx+5, my-5)
+    #    @fg.textAlign = "left"
+    #    @fg.font = "20px sans-serif"
+    #    @fg.fillStyle = "black"
+    #    @fg.fillText("c", mx+5, my-5)
 
-        @fg.textAlign = "left"
-        @fg.font = "20px sans-serif"
-        @fg.fillStyle = "black"
-        @fg.fillText("c^2", mx2+5, my2-5)
+    #    @fg.textAlign = "left"
+    #    @fg.font = "20px sans-serif"
+    #    @fg.fillStyle = "black"
+    #    @fg.fillText("c^2", mx2+5, my2-5)
 
-        @fg.textAlign = "left"
-        @fg.font = "20px sans-serif"
-        @fg.fillStyle = "black"
-        @fg.fillText("c^2+c", mx3+5, my3-5)
+    #    @fg.textAlign = "left"
+    #    @fg.font = "20px sans-serif"
+    #    @fg.fillStyle = "black"
+    #    @fg.fillText("c^2+c", mx3+5, my3-5)
 
-    drawBorder: ->
-        @fg.lineWidth = 20
-        @fg.strokeStyle = @palette.color(@fractal.iterate(@mouse, 20)).string()
-        [x1, y1] = @fromWorld(new Complex(-2,-2))
-        [x2, y2] = @fromWorld(new Complex(2,2))
+    #drawBorder: ->
+    #    @fg.lineWidth = 20
+    #    @fg.strokeStyle = @palette.color(@fractal.iterate(@mouse, 20)).string()
+    #    [x1, y1] = @fromWorld(new Complex(-2,-2))
+    #    [x2, y2] = @fromWorld(new Complex(2,2))
 
-        @fg.beginPath()
-        @fg.moveTo(x1, y1)
-        @fg.lineTo(x2, y1)
-        @fg.lineTo(x2, y2)
-        @fg.lineTo(x1, y2)
-        @fg.lineTo(x1, y1)
-        #@fg.arc(ox, oy, @zoom*2+@fg.lineWidth/2, 0, 2*Math.PI, false)
-        @fg.stroke()
+    #    @fg.beginPath()
+    #    @fg.moveTo(x1, y1)
+    #    @fg.lineTo(x2, y1)
+    #    @fg.lineTo(x2, y2)
+    #    @fg.lineTo(x1, y2)
+    #    @fg.lineTo(x1, y1)
+    #    #@fg.arc(ox, oy, @zoom*2+@fg.lineWidth/2, 0, 2*Math.PI, false)
+    #    @fg.stroke()
 
     draw: (drawBg=false) ->
         if drawBg and @drawFractal
@@ -664,13 +670,15 @@ class Canvas
                     @fg.moveTo(x1, y1)
                     @fg.lineTo(x2, y2)
                     @fg.stroke()
-                    #@fg.beginPath()
-                    #@fg.arc(x2, y2, 2, 0, 2*Math.PI, false)
-                    #@fg.fill()
+
+                    if (not @halfSteps) or i.mod(2) == 0
+                        @fg.beginPath()
+                        @fg.arc(x2, y2, 2, 0, 2*Math.PI, false)
+                        @fg.fill()
 
                     @bunny.pos = z2
 
-                    if z2.r*z2.r > 4 or z2.i*z2.i > 4
+                    if z2.r*z2.r + z2.i*z2.i > 4
                         break
 
             for marker in @markers
@@ -682,12 +690,13 @@ class Canvas
                 i = Images.get(marker.name)
                 @fg.drawImage(i, x-marker.ox, y-marker.oy)
 
-
 Images.onload = ->
-    demos = document.getElementsByClassName("demo")
-    for demo in demos
+    demoDivs = document.getElementsByClassName("demo")
+    demos = {}
+    for demo in demoDivs
         id = demo.id
         canvas = new Canvas()
+        demos[id] = canvas
         switch id
             when "plain"
                 zc = document.getElementById("zoomcount")
@@ -696,7 +705,7 @@ Images.onload = ->
 
                 canvas.drawAxes = false
                 canvas.drawIteration = false
-                canvas.uiLevel = 1
+                canvas.zoomControls = true
                 canvas.zoomHook = (level) ->
                     if level == 1
                         zc.innerHTML = level+" time"
@@ -722,25 +731,65 @@ Images.onload = ->
             when "complex"
                 canvas.drawFractal = false
                 canvas.depth = 0
-                canvas.uiLevel = 0
-            when "square"
+            when "walk"
                 canvas.drawFractal = false
                 canvas.depth = 0
+                canvas.maxDepth = 1
+                canvas.fractal = new Mandelbrot()
+                canvas.stepControls = true
+            when "hop"
+                canvas.drawFractal = false
+                canvas.depth = 1
                 canvas.maxDepth = 1.5
                 canvas.halfSteps = true
                 canvas.fractal = new Steps()
-                canvas.uiLevel = 2
+                canvas.stepControls = true
             when "step"
                 canvas.drawFractal = false
                 canvas.depth = 0
                 canvas.maxDepth = 2
                 canvas.halfSteps = true
                 canvas.fractal = new Steps()
-                canvas.uiLevel = 2
+                canvas.stepControls = true
+            when "steps"
+                canvas.drawFractal = false
+                canvas.depth = 0
+                canvas.maxDepth = 4
+                canvas.halfSteps = true
+                canvas.fractal = new Steps()
+                canvas.stepControls = true
+                canvas.updateHook = =>
+                    if demos["fullsteps"]
+                        demos["fullsteps"].flag.pos = demos["steps"].flag.pos
+                        demos["fullsteps"].draw()
+            when "fullsteps"
+                canvas.drawFractal = false
+                canvas.depth = 0
+                canvas.maxDepth = 4
+                canvas.stepControls = true
+                canvas.updateHook = =>
+                    if demos["steps"]
+                        demos["steps"].flag.pos = demos["fullsteps"].flag.pos
+                        demos["steps"].flag.pos = demos["fullsteps"].flag.pos
+                        demos["steps"].draw()
             when "iteration"
                 canvas.drawFractal = false
-                canvas.depth = 2
-                canvas.maxDepth = 20
+                canvas.depth = 0
+                canvas.maxDepth = 100
+                canvas.stepControls = true
+            when "scribble"
+                canvas.drawFractal = false
+                canvas.drawTrace = true
+                canvas.depth = 10
+                canvas.palette = new Palette("bw")
+            when "color"
+                canvas.drawFractal = false
+                canvas.drawTrace = true
+                canvas.depth = 10
+                canvas.palette = new Palette("colordemo")
+            when "sandbox"
+                canvas.zoomControls = true
+                canvas.stepControls = true
         canvas.init(id)
     ## plain
     #zoomCount = 0

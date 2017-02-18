@@ -14,14 +14,13 @@
         }
 
         body {
-            max-width: 800px;
+            max-width: 500px;
             margin: auto;
         }
         .demo {
             background: lightyellow;
             padding: 1em 0;
             font-weight: bold;
-            min-height: 800px;
         }
         .demo p {
             font-size: 120%;
@@ -30,20 +29,13 @@
         .layers {
             position: relative;
             width: 100%;
-            width: 800px;
-            height: 800px;
+            width: 500px;
+            height: 500px;
         }
         canvas {
             position: absolute;
             top: 0;
             left: 0;
-            width: 800px;
-            height: 800px;
-        }
-
-        .big {
-            width: 800px;
-            height: 800px;
         }
         </style>
     </head>
@@ -80,46 +72,65 @@
         <!--<p>Now the number you select has a red, horizontal component, like before, but also a blue, vertical one. Numbers like these are called... *complex numbers*! AAAAAAAAHHHH! Wait, let me tell you a secret: *whisper* They are not totally not scary at all! When adding two of them, you just put their arrows together and BAM! You get their sum! (DEMO HERE)</p>
 
         <p>The only thing that's a little weird about them is how multiplication works. You know how you can *square* a normal number? Multiplying it by itself? Like, saying 3^2, and it means 3*3? Well, you can do the same thing to complex numbers. Have a look:</p>-->
-        <p>Ah, the bunny woke up! The first thing it will always do is walk to the position of the flag. We call this the *first step*. All steps after that consist of two movements: First, it will *hop*! The bunny has a very particular way of hopping: It looks at the angle it has to the right-direction and hops in such a way that its angle doubles. It also looks at the distance to its sleeping position and hops so that its distance to it *squares*. Intuitively, if its distance to its sleeping position is less than 1, it will hop a little bit closer, and if the distance islarger than 1, it will hop a little bit farther away.</p>
+        <p>Ah, the bunny woke up! The first thing it will always do is walk to the position of the flag. We call this *Step 1*.</p>
 
-        <div class="demo" id="square">
-            <p>Pull the step slider up. Step 1 is the initial walking. Step 2 is the hop! Then drag the flag around.</p>
+        <div class="demo" id="walk">
+            <p>Pull the slider to Step 1.</p>
+        </div>
+
+        <p>Step 2 consists of two movements: First, the bunny will *hop*! It has a very particular way of hopping: It hops so that the angle to the right-direction *doubles*, and the distance to its sleeping position *squares*. Intuitively, if its distance to its sleeping position is less than 1, it will hop a little bit closer, and if the distance is larger than 1, it will hop a little bit farther away.</p>
+
+        <div class="demo" id="hop">
+            <p>Pull the slider to Step 1.5, then drag the flag around.</p>
         </div>
 
         <!--<p>Except that this looks like a broken clock with fat, ugly handlebars, what happens? (To get the square of a complex number, you double its angle to the x-axis and square its length. ADD THESE MEASURES TO THE DEMO)</p>-->
 
-        <p>And after that, it will walk again, in the same direction and distance it initially walked towards the flag:</p>
+        <p>The second movement of Step 2 is another walking movement. The bunny will walk in the same direction and distance as it initially walked towards the flag:</p>
 
         <div class="demo" id="step">
-            <p>Pull the slider up. Step 3 is another walking.</p>
+            <p></p>
         </div>
 
-        <p>And NOW the exciting stuff happens! What if we repeat this process? After calculating our c^2+c, we square it *again*, and add c *again*? (PROBABLY NEEDS AN INBETWEEN DEMO) And do this forever and ever and ever? Look:</p>
+        <p>And after that, the bunny just repeats these two movements: A hop, a walk, another hop, another walk. It stops doing that only when it ends up outside of the large circle.</p>
+
+        <div class="demo" id="steps">
+            <p></p>
+        </div>
+
+        <p>Now, let's get rid of the half-steps! From now on, we will treat the hopping-and-walking as a single movement.</p>
+
+        <p>Here's the same demo as before, but the the bunny directly goes full steps. The flag positions of this and the last demo are in sync, so you can compare how this works.</p>
+
+        <div class="demo" id="fullsteps">
+            <p></p>
+        </div>
+
+        <p>And NOW it gets exciting! What if we let our bunny do many, many, steps? Like, 100 of them? Look:</p>
 
         <div class="demo" id="iteration">
-            <p>Move ya mouse, yo! Can you find a spiral? A star? A triangle?</p>
+            <p>Pull the slider to Step 100, then drag the flag around.</p>
+            <p>Can you find a spiral? A star? A triangle?</p>
         </div>
 
-        <!--
         <p>Whaaaat. Crazy patterns everywhere!</p>
-        <p>If you play with the demo again, you can see that for some starting points, the blue path runs away, off-screen. And for others, it swirled around and stayed on-screen. In the next demo, you can click and scribble. If the path at the current mouse position leaves the screen, we will color the starting point red, otherwise black.</p>
+        <p>You can see that for some flag positions, the bunny moved outside the circle (into FREEEEDOM!), while for others, it stayed inside. Let's do an experiment: In the next demo, if the bunny's path leads it to freedom, we will color the current flag position white. If the bunny stays inside the circle, we will color it black ('cause it's so sad!)</p>
 
-        <div class="example">
-            <p>Scribble, like tracing a coin behind a sheet of paper. <button type="button" id="scribble-reset">Reset</button></p>
-            <canvas id="scribble">
+        <div class="demo" id="scribble">
+            <p>Drag the flag.</p>
         </div>
 
         <p>Why, HELL~O! You drew yourself a teeny tiny Mandelbrot set!</p>
 
         <p>Let's add more color. So far, we only used red (for when the path leaves) and black (for when the path stays). Let's say, when the path leaves after one step, we'll color that pixel X. When it leaves after two steps, we'll color it X. And so on. (ADD VISUALIZATION OF THE PALETTE) Try it:</p>
 
-        <div class="example">
-            <p>Scribble. <button type="button" id="color-reset">Reset</button></p>
-            <canvas id="color">
+        <div class="demo" id="color">
+            <p>Drag the flag.</p>
         </div>
 
         <p>And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.</p>
 
+        <!--
         <p>Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.</p>
 
         <div class="example">
