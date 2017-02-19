@@ -1,0 +1,129 @@
+doctype html
+html
+    head
+        title Mandelbrot
+        link href="mandelbrot.css" rel="stylesheet"
+        script src="mandelbrot.js"
+    body
+        h1 A Hitchhiker's Guide to the Mandelbrot Set
+
+        p Maybe you've seen an image of the Mandelbrot Set before. It's trippy, it's wonderous, it's beautiful. Here it is, have a look:
+        p.instruction Click to zoom.
+        .demo#plain
+
+        p#zoom-remark
+        p The Mandelbrot Set is a so-called <em>fractal</em>, which means it's self-similar. Zooming in, you can always find smaller copies of itself. Maybe you encountered some yourself when exploring the above image?
+        p You can also find fractals in nature. For example, in ferns or Romanesco broccoli:
+        p (IMAGES HERE)
+        p But what does this image mean? How is it constructed?
+
+        h2 What is the Mandelbrot Set?
+
+        p The Mandelbrot Set is the <strong>result of repeated application of a simple rule</strong>, and as such a great example of <em>emergence</em>.
+        p I'll attempt to explain to you how this works without math. If the math interests you, you can read up on this in the gray columns, but this is purely optional!
+        .left
+            p You have a bunny, and a flag. You can place the flag everywhere you want, while the bunny has its own free will. It's still asleep... z z Z Z Z.
+        .right
+            p You start with a complex number c, which can be chosen freely. Additionally, we will build a sequence of complex numbers z_0, z_1, ... which starts at z_0 = 0.
+        p.instruction Drag the flag around. No surprises here.
+        .demo#complex
+
+        .left
+            p Ah, the bunny woke up! The first thing it will always do is walk to the position of the flag. We call this *Step 1*.
+        .right
+            p
+                | z_1 = c
+        p.instruction Pull the slider to Step 1.
+        .demo#walk
+
+        .left
+            p Step 2 consists of two movements: First, the bunny will *hop*! It has a very particular way of hopping: It hops so that the angle to the right-direction *doubles*, and the distance to its sleeping position *squares*. Intuitively, if its distance to its sleeping position is less than 1, it will hop a little bit closer, and if the distance is larger than 1, it will hop a little bit farther away.
+        .right
+            p What happens to a complex number when squaring it? Well, if the number z = a + bi, then z^2 = (a + bi)^2, and if you remember the binomial formula, this means that z^2 = a^2 + 2abi + (bi)^2. As i^2 = -1, z^2 = a^2 - b^2 + 2abi. There you have it.
+        p.instruction Pull the slider to Step 1.5, then drag the flag around.
+        .demo#hop
+
+        .left
+            p The second movement of Step 2 is another walking movement. The bunny will walk in the same direction and distance as it initially walked towards the flag:
+        .right
+            p After squaring z, we add c again. This is how we z_2 = z^2+c
+        .demo#step
+
+        .left
+            p And after that, the bunny just repeats these two movements: A hop, a walk, another hop, another walk. It stops doing that only when it ends up outside of the large circle.
+        .right
+            p And then we iterate. z_{i+1} = z_i^2+c
+        .demo#steps
+
+        p Now, let's get rid of the half-steps! From now on, we will treat the hopping-and-walking as a single movement.
+        p Here's the same demo as before, but the the bunny directly goes full steps. The flag positions of this and the last demo are in sync, so you can compare how this works.
+        .demo#fullsteps
+
+        p And NOW it gets exciting! What if we let our bunny do many, many, steps? Like, 100 of them? Look:
+        p.instruction Pull the slider to Step 100, then drag the flag around.
+        p.instruction Can you find a spiral? A star? A triangle?
+        .demo#iteration
+
+        p Whaaaat. Crazy patterns everywhere!
+        p You can see that for some flag positions, the bunny moved outside the circle (into FREEEEDOM!), while for others, it stayed inside. Let's do an experiment: In the next demo, if the bunny's path leads it to freedom, we will color the current flag position white. If the bunny stays inside the circle, we will color it black ('cause it's so sad!)
+        p.instruction Drag the flag.
+        .demo#scribble
+
+        p Why, HELL~O! You drew yourself a teeny tiny Mandelbrot set!
+
+        h2 How to color the Mandelbrot Set?
+
+        p Let's add more color. So far, we only used red (for when the path leaves) and black (for when the path stays). Let's say, when the path leaves after one step, we'll color that pixel X. When it leaves after two steps, we'll color it X. And so on. (ADD VISUALIZATION OF THE PALETTE) Try it:
+        p.instruction Drag the flag.
+        .demo#color
+
+        p And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.
+
+        /
+            | <p>Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.</p
+
+            | <div class="example"
+            | <p>Click to zoom. Middle-click to zoom out. <button type="button" id="zoomiter-reset">Reset</button></p
+            | <canvas id="zoomiter"
+            | </div
+
+            | <p>Some fun things you can try:</p
+
+            | <ul
+            | <li>What happens to the path at the centers of the outer "bulbs"?</li
+            | <li>Can you find out which period numbers are connected to each bulb? Do you see a relation to the "antennas" extending outward from that bulb?</li
+            | <li>Zoom in on one of the bulbs. What happens to the path at the centers of its sub-bulbs?</li
+            | <li>What is the period of the bulbs going "outward"? What happens if you follow a number of them?</li
+            | </ul
+
+            | <p>(HERE BE DRAGONS) Lorem ipsum Mandelbrot sit amet!</p
+
+
+
+
+
+
+
+
+            | <div class="example"
+            | <p>Click to zoom</p
+            | <button type="button" id="exp-reset">Reset</button
+            | <span>f_c(z) = z^n+c, where n =</span> <span>0</span><input type="range" id="exp-exp" min="0" max="5" value="2" step="0.1"><span>5</span
+            | <canvas id="exp"
+            | </div
+
+        h2 Sandbox
+
+        p Here's a huge big sandbox:
+        .demo#sandbox
+
+            /
+            | <p>Click to zoom</p
+            | <button type="button" id="sandbox-reset">Reset</button
+            | <select id="sandbox-f"
+            | <option value="z^2+c">z^2+c</option
+            | <option value="(z*)^2+c">(z*)^2+c</option
+            | </select
+            | <canvas id="sandbox"></canvas
+            | <input type="range" id="sandbox-slider" min="0" max="50" value="5" style="width: 800px"
+            | </div

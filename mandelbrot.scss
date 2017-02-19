@@ -1,0 +1,74 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, p, .demo {
+    margin-bottom: 1em;
+}
+
+body {
+    max-width: 670px;
+    margin: auto;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 22px;
+    color: #333;
+}
+
+p {
+    line-height: 1.7em;
+    text-align: justify;
+}
+
+.left {
+    float: left;
+    width: 49%;
+}
+
+.right {
+    float: right;
+    width: 49%;
+    background: #ccc;
+    p {
+        margin-left: 1em;
+        margin-right: 1em;
+    }
+}
+
+.instruction {
+    clear: both;
+    font-weight: bold;
+    text-align: center;
+}
+
+.demo {
+    width: 500px;
+    margin: auto;
+    clear: both;
+    p, button, input {
+        font-size: 120%;
+    }
+}
+
+.layers {
+    margin: auto;
+    background: #00cc66;
+    position: relative;
+    width: 100%;
+    width: 500px;
+    height: 500px;
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+}
+
+button {
+    padding: 0 0.5em;
+    margin-right: 0.2em;
+}
+
+.controls {
+    margin-bottom: 0.2em;
+}

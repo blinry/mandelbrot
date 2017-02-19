@@ -1,20 +1,6 @@
 Number.prototype.mod = (n) ->
     ((this%n)+n)%n
 
-toFixed = (x) ->
-    if (Math.abs(x) < 1.0)
-        e = parseInt(x.toString().split('e-')[1])
-        if (e)
-            x *= Math.pow(10,e-1)
-            x = '0.' + (new Array(e)).join('0') + x.toString().substring(2)
-    else
-        e = parseInt(x.toString().split('+')[1])
-        if (e > 20)
-            e -= 20
-            x /= Math.pow(10,e)
-            x += (new Array(e+1)).join('0')
-    return x
-
 class Images
     @images = []
     @load: (filenames) ->
@@ -244,8 +230,8 @@ class Canvas
         div.appendChild(bottomControls)
         if @zoomControls
             topControls.appendChild(resetButton)
-            topControls.appendChild(zoomInButton)
-            topControls.appendChild(zoomOutButton)
+            #topControls.appendChild(zoomInButton)
+            #topControls.appendChild(zoomOutButton)
         if @stepControls
             bottomControls.appendChild(timeSlider)
             bottomControls.appendChild(stepCounter)
@@ -607,7 +593,6 @@ class Canvas
         d = @fractal.iterate(@flag.pos, @depth)
         if d == -1
             d = @depth
-        console.log(d)
         @slider.drawImage(Images.get("bunny.png"), d*(w/@maxDepth)-20, 0)
 
     draw: (drawBg=false) ->
@@ -728,30 +713,33 @@ Images.onload = ->
         demos[id] = canvas
         switch id
             when "plain"
-                zc = document.getElementById("zoomcount")
-                zp = document.getElementById("zoompersons")
-                zr = document.getElementById("zoomremark")
+                zr = document.getElementById("zoom-remark")
 
                 canvas.palette = new Palette("rainbow")
                 canvas.drawAxes = false
                 canvas.drawIteration = false
                 canvas.zoomControls = true
                 canvas.zoomHook = (level) ->
-                    if level == 1
-                        zc.innerHTML = level+" time"
+                    if level == 0
+                        sentence = "You didn't zoom in yet. Come on, try it! :)"
                     else
-                        zc.innerHTML = level+" times"
-                    humans = Math.floor(Math.pow(0.25, level)*7.5e9)
-                    if humans == 7.5e9
-                        zp.innerHTML = "all"
-                    else if humans == 0
-                        zp.innerHTML = "none"
-                    else
-                        zp.innerHTML = humans
-                    if humans == 0
-                        zr.innerHTML = "This means it's very, very probable that you are the first human being ever to see this region of the Mandelbrot set!"# If you wanna give it a name, here's its coordinate: "+plain.center.string()
-                    else
-                        zr.innerHTML = ""
+                        sentence = "So you just zoomed in "+level+" "
+                        if level == 1
+                            sentence += "time"
+                        else
+                            sentence += "times"
+                        sentence += ". If all humans on earth did that, "
+                        humans = Math.floor(Math.pow(0.25, level)*7.5e9)
+                        if humans == 7.5e9
+                            sentence += "all"
+                        else if humans == 0
+                            sentence += "probably <i>none</i>"
+                        else
+                            sentence += "about "+humans
+                        sentence += " of them would end up where you did."
+                        if humans == 0
+                            sentence += " This means it's very, very probable that you are the first human being ever to see this region of the Mandelbrot set!"
+                    zr.innerHTML = sentence
 
             #when "real"
             #    canvas.drawFractal = false
