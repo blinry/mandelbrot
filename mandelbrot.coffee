@@ -151,7 +151,7 @@ class Palette
             when "gray"
                 return new Color(0, 0, (i*2).mod(360), 1)
             when "rainbow"
-                return new Color((i).mod(360), 80, 60, 1)
+                return new Color((i*10).mod(360), 80, 60, 1)
             when "bw"
                 return new Color(0, 100, 100, 1)
             when "zebra"
@@ -212,7 +212,7 @@ class Canvas
             @zoomOut(@flag.pos)
 
         stepCounter = document.createElement("span")
-        stepCounter.innerHTML = "Step "+@depth
+        stepCounter.innerHTML = "Step "+@maxDepth
 
         timeSlider = document.createElement("input")
         timeSlider.setAttribute("type", "range")
@@ -230,6 +230,8 @@ class Canvas
             stepCounter.innerHTML = "Step "+@depth
             @draw()
             @updateHook()
+        timeSlider.onchange = =>
+            @draw(true)
 
         paletteCanvas = document.createElement("canvas")
         paletteCanvas.setAttribute("width", @width)
@@ -374,7 +376,7 @@ class Canvas
         @fgCanvas.ontouchcancel = touchHandler
 
         @zoomReset()
-        @drawSlider()
+        #@drawSlider()
 
     toWorld: (x, y) ->
         r = (x-@width/2)/@zoom+@center.r
@@ -596,10 +598,17 @@ class Canvas
         h = @slider.canvas.clientHeight
         for x in [0..w-1]
             for y in [0..h-1]
-                @slider.fillStyle = @palette.color(x/w*@maxDepth).string()
-                #console.log(@slider.fillStyle)
+                step = Math.round(x/w*@maxDepth)
+                if step > @depth
+                    @slider.fillStyle = "black"
+                else
+                    @slider.fillStyle = @palette.color(step).string()
                 @slider.fillRect(x, 0, 1, h)
-                #@slider.fill()
+        d = @fractal.iterate(@flag.pos, @depth)
+        if d == -1
+            d = @depth
+        console.log(d)
+        @slider.drawImage(Images.get("bunny.png"), d*(w/@maxDepth)-20, 0)
 
     draw: (drawBg=false) ->
         if drawBg and @drawFractal
@@ -608,7 +617,8 @@ class Canvas
             for y in [0..@height-1]
                 for x in [0..@width-1]
                     c = @toWorld(x, y)
-                    [r,g,b,a] = @palette.color(@fractal.iterate(c, 20*Math.log2(@zoom))).rgba()
+                    #[r,g,b,a] = @palette.color(@fractal.iterate(c, 20*Math.log2(@zoom))).rgba()
+                    [r,g,b,a] = @palette.color(@fractal.iterate(c, @depth)).rgba()
                     @data.data[offset++] = r
                     @data.data[offset++] = g
                     @data.data[offset++] = b
@@ -707,6 +717,7 @@ class Canvas
                 #@fg.fill()
                 i = Images.get(marker.name)
                 @fg.drawImage(i, x-marker.ox, y-marker.oy)
+        @drawSlider()
 
 Images.onload = ->
     demoDivs = document.getElementsByClassName("demo")
@@ -721,6 +732,7 @@ Images.onload = ->
                 zp = document.getElementById("zoompersons")
                 zr = document.getElementById("zoomremark")
 
+                canvas.palette = new Palette("rainbow")
                 canvas.drawAxes = false
                 canvas.drawIteration = false
                 canvas.zoomControls = true
@@ -798,18 +810,21 @@ Images.onload = ->
             when "scribble"
                 canvas.drawFractal = false
                 canvas.drawTrace = true
-                canvas.depth = 10
+                canvas.maxDepth = 10
                 canvas.palette = new Palette("bw")
                 canvas.stepControls = true
             when "color"
                 canvas.drawFractal = false
                 canvas.drawTrace = true
-                canvas.depth = 10
+                canvas.maxDepth = 10
+                canvas.traceSize = 15
                 canvas.palette = new Palette("colordemo")
                 canvas.stepControls = true
             when "sandbox"
                 canvas.zoomControls = true
                 canvas.stepControls = true
+                canvas.palette = new Palette("rainbow")
+                canvas.drawAxes = false
         canvas.init(id)
     ## plain
     #zoomCount = 0

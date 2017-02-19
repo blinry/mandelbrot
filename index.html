@@ -1,43 +1,8 @@
-<!doctype>
+<!doctype html>
 <html>
     <head>
         <title>Mandelbrot</title>
-        <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-
-        h1, h2, p {
-            margin-bottom: 1em;
-            margin-top: 1em;
-        }
-
-        body {
-            max-width: 500px;
-            margin: auto;
-        }
-        .demo {
-            background: lightyellow;
-            padding: 1em 0;
-            font-weight: bold;
-        }
-        .demo p {
-            font-size: 120%;
-            text-align: center;
-        }
-        .layers {
-            position: relative;
-            width: 100%;
-            width: 500px;
-            height: 500px;
-        }
-        .layers canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        </style>
+        <link rel="stylesheet" href="mandelbrot.css">
     </head>
     <body>
         <h1>A Hitchhiker's Guide to the Mandelbrot Set</h1>
@@ -166,7 +131,7 @@
 
         -->
 
-        <p>Huge big sandbox:</p>
+        <p>Here's a huge big sandbox:</p>
 
         <div class="demo" id="sandbox"></div>
             <!--<p>Click to zoom</p>

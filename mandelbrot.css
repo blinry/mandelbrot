@@ -1,0 +1,34 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, p {
+    margin-bottom: 1em;
+    margin-top: 1em;
+}
+
+body {
+    max-width: 500px;
+    margin: auto;
+}
+.demo {
+    padding: 1em 0;
+    font-weight: bold;
+}
+.demo p {
+    font-size: 120%;
+    text-align: center;
+}
+.layers {
+    background: #00cc66;
+    position: relative;
+    width: 100%;
+    width: 500px;
+    height: 500px;
+}
+.layers canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
