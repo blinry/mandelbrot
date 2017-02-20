@@ -1,7 +1,7 @@
 doctype html
 html
     head
-        title Mandelbrot
+        title A Hitchhiker's Guide to the Mandelbrot Set
         link href="mandelbrot.css" rel="stylesheet"
         script src="mandelbrot.js"
     body
@@ -14,49 +14,53 @@ html
         p#zoom-remark
         p The Mandelbrot Set is a so-called <em>fractal</em>, which means it's self-similar. Zooming in, you can always find smaller copies of itself. Maybe you encountered some yourself when exploring the above image?
         p You can also find fractals in nature. For example, in ferns or Romanesco broccoli:
-        p (IMAGES HERE)
+        p IMAGES HERE
         p But what does this image mean? How is it constructed?
 
-        h2 What is the Mandelbrot Set?
+        h2 Part 1: What is the Mandelbrot Set?
 
         p The Mandelbrot Set is the <strong>result of repeated application of a simple rule</strong>, and as such a great example of <em>emergence</em>.
-        p I'll attempt to explain to you how this works without math. If the math interests you, you can read up on this in the gray columns, but this is purely optional!
         .left
-            p You have a bunny, and a flag. You can place the flag everywhere you want, while the bunny has its own free will. It's still asleep... z z Z Z Z.
+            p I'll attempt to explain to you how this works in a purely visual way, without any math. If the math interests you, you can read up on this in the gray columns, but this is purely optional!
+            p In our little world, there is a bunny, and a flag. You can place the flag everywhere you want. The bunny has its own free will. Psssst, it's still asleep! ... z z Z Z Z
         .right
-            p You start with a complex number c, which can be chosen freely. Additionally, we will build a sequence of complex numbers z_0, z_1, ... which starts at z_0 = 0.
+            p The flag actually represents something which mathematicians call a <em>complex number</em>. It's just like a normal number, but is has a funny little extra number attached to it, which tells you how far it is above or below the number line. Mathematicians call this the number's <em>imaginary component</em>, and mark it with an <em>i</em>. For example, in the demo below, c = <span id="c">?</span>. Try placing the flag on -1.0+0.5i!
         p.instruction Drag the flag around. No surprises here.
         .demo#complex
 
         .left
-            p Ah, the bunny woke up! The first thing it will always do is walk to the position of the flag. We call this *Step 1*.
+            p The bunny always sleeps in the center of the lawn. But look, it bunny woke up! It will now start to walk and hop around. The first thing it will always do is <strong>walk</strong> to the position of the flag. We call this movement <em>Step 1</em>.
         .right
-            p
-                | z_1 = c
-        p.instruction Pull the slider to Step 1.
+            /p The bunny will follow a path described by a series of complex numbers, <em>z_0, z_1, z_2</em>, and so on. The first two numbers are z_0 = 0 and z_1 = c.
+            p The bunny starts at <em>z_0 = 0</em>. The <strong>walk</strong> movement is equivalent to adding <em>c</em>, so the next position will be <em>z_1 = z_0+c = c</em>.
+        p.instruction Pull the slider to Step 1, then drag the flag around.
         .demo#walk
 
         .left
-            p Step 2 consists of two movements: First, the bunny will *hop*! It has a very particular way of hopping: It hops so that the angle to the right-direction *doubles*, and the distance to its sleeping position *squares*. Intuitively, if its distance to its sleeping position is less than 1, it will hop a little bit closer, and if the distance is larger than 1, it will hop a little bit farther away.
+            p Step 2 consists of two movements: First, the bunny will <strong>hop</strong>! It has a very particular way of hopping: It hops so that its angle to the right-direction <em>doubles</em>, and the distance to its sleeping position <em>squares</em>. Intuitively, if its distance to its sleeping position is less than 1, it will hop a little bit closer, and if the distance is larger than 1, it will hop a little bit farther away.
         .right
-            p What happens to a complex number when squaring it? Well, if the number z = a + bi, then z^2 = (a + bi)^2, and if you remember the binomial formula, this means that z^2 = a^2 + 2abi + (bi)^2. As i^2 = -1, z^2 = a^2 - b^2 + 2abi. There you have it.
+            p The <strong>hop</strong> movement is equivalent to squaring the complex number representing the current position. The behaviour described on the left is just what complex numbers do when they are multiplied with themselves. If you really wanna know why, you can look at how the <a href="https://en.wikipedia.org/wiki/Complex_number#Polar_form">polar form</a> of complex numbers works.
+            / What happens to a complex number when squaring it? Well, if the number z = a + bi, then z^2 = (a + bi)^2, and if you remember the binomial formula, this means that z^2 = a^2 + 2abi + (bi)^2. As i^2 = -1, z^2 = a^2 - b^2 + 2abi. There you have it.
         p.instruction Pull the slider to Step 1.5, then drag the flag around.
         .demo#hop
 
         .left
-            p The second movement of Step 2 is another walking movement. The bunny will walk in the same direction and distance as it initially walked towards the flag:
+            p The second movement of Step 2 is another <strong>walk</strong> movement. The bunny will walk in the same direction and distance as it initially walked towards the flag:
         .right
-            p After squaring z, we add c again. This is how we z_2 = z^2+c
+            p After squaring <em>z_1</em>, we add c again. Together, <em>z_2 = z_1^2+c</em>.
         .demo#step
 
         .left
-            p And after that, the bunny just repeats these two movements: A hop, a walk, another hop, another walk. It stops doing that only when it ends up outside of the large circle.
+            p And after that, the bunny just repeats these two movements: A hop, a walk, another hop, another walk. Let's look at how this looks for up to Step 4:
         .right
-            p And then we iterate. z_{i+1} = z_i^2+c
+            p And then we repeat this: We square the current <em>z</em> value, then we add <em>c</em>. And so on.
         .demo#steps
 
-        p Now, let's get rid of the half-steps! From now on, we will treat the hopping-and-walking as a single movement.
-        p Here's the same demo as before, but the the bunny directly goes full steps. The flag positions of this and the last demo are in sync, so you can compare how this works.
+        .left
+            p Now, let's get rid of the half-steps! From now on, we will treat the hopping-and-walking as a single movement.
+            p Here's the same demo as before, but the the bunny directly goes full steps. The flag positions of this and the last demo are in sync, so you can compare how this works.
+        .right
+            p If we want to calculate the new position <em>z_{i+1}</em>, and we know the old position <em>z_i</em>, we can calculate <em>z_{i+1} = z_i^2+c</em>.
         .demo#fullsteps
 
         p And NOW it gets exciting! What if we let our bunny do many, many, steps? Like, 100 of them? Look:
@@ -66,18 +70,20 @@ html
 
         p Whaaaat. Crazy patterns everywhere!
         p You can see that for some flag positions, the bunny moved outside the circle (into FREEEEDOM!), while for others, it stayed inside. Let's do an experiment: In the next demo, if the bunny's path leads it to freedom, we will color the current flag position white. If the bunny stays inside the circle, we will color it black ('cause it's so sad!)
-        p.instruction Drag the flag.
+        p.instruction Drag the flag around to scribble.
         .demo#scribble
 
         p Why, HELL~O! You drew yourself a teeny tiny Mandelbrot set!
 
-        h2 How to color the Mandelbrot Set?
+        /h2 Part 2: How to color the Mandelbrot Set?
 
-        p Let's add more color. So far, we only used red (for when the path leaves) and black (for when the path stays). Let's say, when the path leaves after one step, we'll color that pixel X. When it leaves after two steps, we'll color it X. And so on. (ADD VISUALIZATION OF THE PALETTE) Try it:
-        p.instruction Drag the flag.
+        p Let's add more color. So far, we only used white (for when the path leaves) and black (for when the path stays). Let's say, when the path leaves after one step, we'll color that pixel red. When it leaves after two steps, we'll color it orange. And so on, you can see the colors we use here under the slider below. Try it:
+        p.instruction Drag the flag around to scribble.
         .demo#color
 
         p And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.
+
+        /h2 Part 3: Which variations exist?
 
         /
             | <p>Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.</p
@@ -112,18 +118,18 @@ html
             | <canvas id="exp"
             | </div
 
-        h2 Sandbox
+        /h2 Sandbox
 
-        p Here's a huge big sandbox:
-        .demo#sandbox
+        /p Here's a huge big sandbox:
+        /.demo#sandbox
 
-            /
-            | <p>Click to zoom</p
-            | <button type="button" id="sandbox-reset">Reset</button
-            | <select id="sandbox-f"
-            | <option value="z^2+c">z^2+c</option
-            | <option value="(z*)^2+c">(z*)^2+c</option
-            | </select
-            | <canvas id="sandbox"></canvas
-            | <input type="range" id="sandbox-slider" min="0" max="50" value="5" style="width: 800px"
-            | </div
+        //
+        /    | <p>Click to zoom</p
+        /    | <button type="button" id="sandbox-reset">Reset</button
+        /    | <select id="sandbox-f"
+        /    | <option value="z^2+c">z^2+c</option
+        /    | <option value="(z*)^2+c">(z*)^2+c</option
+        /    | </select
+        /    | <canvas id="sandbox"></canvas
+        /    | <input type="range" id="sandbox-slider" min="0" max="50" value="5" style="width: 800px"
+        /    | </div
