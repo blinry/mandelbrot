@@ -25,15 +25,15 @@ html
 
         p#zoom-remark
         p The Mandelbrot Set is a so-called <em>fractal</em>, which means it's self-similar. Zooming in, you can always find smaller copies of itself. Maybe you encountered some yourself when exploring the above image?
-        p You can also find fractals in nature. For example, in ferns or Romanesco broccoli:
-        p IMAGES HERE
-        p But what does this image mean? How is it constructed?
+        /p You can also find fractals in nature. For example, in ferns or Romanesco broccoli:
+        /p IMAGES HERE
+        p But what does this image mean? How is it constructed? It all begins with a sleeping bunny.
 
         h2 Part 1: What is the Mandelbrot Set?
 
-        p The Mandelbrot Set is the <strong>result of repeated application of a simple rule</strong>, and as such a great example of <em>emergence</em>.
+        p The Mandelbrot Set is the <strong>result of repeated application of a simple rule</strong>.
         .left
-            p I'll attempt to explain to you how this works in a purely visual way, without any math. If the math interests you, you can read up on this in the gray columns, but this is purely optional!
+            p I'll attempt to explain to you how this works in a purely visual way, without any math. If, on the other hand, the math interests you, you can read up on this in the gray columns, but this is purely optional!
             p In our little world, there is a bunny, and a flag. You can place the flag everywhere you want. The bunny has its own free will. Psssst, it's still asleep! ... z z Z Z Z
         .right
             p The flag actually represents something which mathematicians call a <em>complex number</em>. It's just like a normal number, but is has a funny little extra number attached to it, which tells you how far it is above or below the number line. Mathematicians call this the number's <em>imaginary component</em>, and mark it with an <em>i</em>. For example, in the demo below, f = <span id="c">?</span>. Try placing the flag on -1.0+0.5i!
@@ -41,7 +41,7 @@ html
         .demo#complex
 
         .left
-            p The bunny always sleeps in the center of the lawn. But look, it bunny woke up! It will now start to walk and hop around. The first thing it will always do is <strong>walk</strong> to the position of the flag. We call this movement <em>Step 1</em>.
+            p The bunny always sleeps in the center of the lawn. But look, it woke up! It will now start to walk and hop around. The first thing it always does is to <strong>walk</strong> to the position of the flag. We call this movement <em>Step 1</em>.
         .right
             p The bunny starts at <em>b<sub>0</sub> = 0</em>. The <strong>walk</strong> movement is equivalent to adding <em>c</em>, so the next position will be <em>b<sub>1</sub> = b<sub>0</sub>+f = c</em>.
         p.instruction Pull the slider to Step 1, then drag the flag around.
@@ -56,7 +56,7 @@ html
         .demo#hop
 
         .left
-            p The second movement of Step 2 is another <strong>walk</strong> movement. The bunny will walk in the same direction and distance as it initially walked towards the flag:
+            p The second movement of Step 2 is another <strong>walk</strong>. The bunny will walk in the same direction and distance as it initially walked towards the flag:
         .right
             p After squaring <em>b<sub>1</sub></em>, we add c again. Together, <em>b<sub>2</sub> = b<sub>1</sub><sup>2</sup>+f</em>.
         .demo#step
@@ -68,8 +68,8 @@ html
         .demo#steps
 
         .left
-            p Now, let's get rid of the half-steps! From now on, we will treat the hopping-and-walking as a single movement.
-            p Here's the same demo as before, but the the bunny directly goes full steps. The flag positions of this and the last demo are in sync, so you can compare how this works.
+            p Let's get rid of the half-steps! From now on, we will treat the hopp-and-walk as a single movement.
+            p Here's the same demo as before, but the the bunny directly goes full steps. The flag positions of this and the last demo are in sync, so you can compare the resulting path.
         .right
             p If we want to calculate the new position <em>b<sub>i+1</sub></em>, and we know the old position <em>b<sub>i</sub></em>, we can calculate <em>b<sub>i+1</sub> = b<sub>i</sub><sup>2</sup>+f</em>.
         .demo#fullsteps
@@ -78,20 +78,23 @@ html
         p.instruction Pull the slider to Step 100, then drag the flag around.<br>Can you find a spiral? A star? A triangle?
         .demo#iteration
 
-        p Whaaaat. Crazy patterns everywhere!
-        p You can see that for some flag positions, the bunny moved outside the circle (into FREEEEDOM!), while for others, it stayed inside. Let's do an experiment: In the next demo, if the bunny's path leads it to freedom, we will color the current flag position white. If the bunny stays inside the circle, we will color it black ('cause it's so sad!)
+        .left
+            p Whaaaat. Crazy patterns everywhere!
+            p You can see that for some flag positions, the bunny escapes the dashed circle (into FREEEEDOM!), while for others, it stays inside. Let's do an experiment: In the next demo, if the bunny's path leads it to freedom, we will color the current flag position white. If the bunny stays inside the circle, we will color it black (because it's so sad!)
+        .right
+            p This is the definition of the Mandelbrot Set: It consists of all flag positions for which the bunny does not escape, if it does an <em>infinite number</em> of steps. Here, we can only approximate: If the bunny hasn't escaped after 100 steps, it's probably close to the Mandelbrot Set, and we will color the flag's position black.
         p.instruction Drag the flag around to scribble.
         .demo#scribble
 
-        p Why, HELL~O! You drew yourself a teeny tiny Mandelbrot set!
+        p Why, helllll~o! You drew yourself a teeny tiny Mandelbrot set!
 
         /h2 Part 2: How to color the Mandelbrot Set?
 
-        p Let's add more color. So far, we only used white (for when the path leaves) and black (for when the path stays). Let's say, when the path leaves after one step, we'll color that pixel red. When it leaves after two steps, we'll color it orange. And so on, you can see the colors we use here under the slider below. Try it:
+        p Let's add more color. So far, we only used white (for when the bunny escapes) and black (for when it doesn't). In the next demo, let's count <em>how many</em> steps it took the bunny to escape from the circle. If it took one step, we color the flag's position red. If it took two, we color it orange, and so on. You can see the colors we use below the step slider.
         p.instruction Drag the flag around to scribble.
         .demo#color
 
-        p And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.
+        p And that's really all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.
 
         p Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.
         p Some things you can try:
@@ -104,6 +107,26 @@ html
         p.instruction Click to zoom. Middle-click to zoom out.
 
         #explore.demo
+
+        h2 Planned content
+
+        p More fractals, for example:
+
+        p.instruction The Tricorn: <em>b<sub>i+1</sub> = (b<sub>i</sub><sup>*</sup>)<sup>2</sup>+f</em>
+        #tricorn.demo
+
+        p.instruction The Burning Ship: <em>b<sub>i+1</sub> = (|Re(b<sub>i</sub>)| + |Im(b<sub>i</sub>)|)<sup>2</sup>+f</em>
+        #ship.demo
+
+        p What happens for other exponents than 2?
+
+        p.instruction The Multibrot: <em>b<sub>i+1</sub> = b<sub>i</sub><sup>6</sup>+f</em>
+        #exp.demo
+
+        p
+            | ... and the surprising connection to Julia Sets. Follow me on Twitter to get updated when the full thing is out: 
+            a href="https://twitter.com/blinry"
+                | @blinry
 
         /<p>(HERE BE DRAGONS) Lorem ipsum Mandelbrot sit amet!</p
             | <div class="example"

@@ -68,6 +68,8 @@ class Mandelbrot
         #z2.r = Math.abs(z2.r)
         #z2.pow(@exp).add(c)
         z.pow(@exp).add(c)
+    abort: (z) ->
+        z.r*z.r+z.i*z.i > 4
     iterate: (c, steps=3) ->
         z = new Complex(0,0)
 
@@ -80,8 +82,46 @@ class Mandelbrot
         if steps > 0
             for i in [0..steps-1]
                 z = @step(z, c)
+                if @abort(z)
+                    return i
+        return -1
 
-                if z.r*z.r+z.i*z.i > 4
+class BurningShip
+    constructor: (@exp=2) ->
+        # nop
+    step: (z, c) ->
+        z2 = z.dup()
+        z2.i = Math.abs(z2.i)
+        z2.r = Math.abs(z2.r)
+        z2.pow(@exp).add(c)
+    abort: (z) ->
+        z.r*z.r+z.i*z.i > 4
+    iterate: (c, steps=3) ->
+        z = new Complex(0,0)
+
+        if steps > 0
+            for i in [0..steps-1]
+                z = @step(z, c)
+                if @abort(z)
+                    return i
+        return -1
+
+class Tricorn
+    constructor: (@exp=2) ->
+        # nop
+    step: (z, c) ->
+        z2 = z.dup()
+        z2.i *= -1
+        z2.pow(@exp).add(c)
+    abort: (z) ->
+        z.r*z.r+z.i*z.i > 4
+    iterate: (c, steps=3) ->
+        z = new Complex(0,0)
+
+        if steps > 0
+            for i in [0..steps-1]
+                z = @step(z, c)
+                if @abort(z)
                     return i
         return -1
 
@@ -92,6 +132,8 @@ class Steps
             z.add(c)
         else
             z.pow(2)
+    abort: (z) ->
+        false
     iterate: (c, steps=0) ->
         z = new Complex(0,0)
         @squareNext = false
@@ -155,6 +197,7 @@ class Canvas
     constructor: ->
         @width = 500
         @height = 500
+        @flip = false
 
         @drawFractal = true
         @drawAxes = true
@@ -176,7 +219,7 @@ class Canvas
         @updateHook = ->
             # nop
     init: (id) ->
-        if not @depth
+        if @depth == undefined
             @depth = @maxDepth
         div = document.getElementById(id)
         #instructions = document.createElement("p")
@@ -221,7 +264,7 @@ class Canvas
             # the first half-step does nothing
             if timeSlider.value == "0.5"
                 timeSlider.value = "0"
-            @depth = parseInt(timeSlider.value)
+            @depth = parseFloat(timeSlider.value)
             stepCounter.innerHTML = "Step "+@depth+"/"+@maxDepth
             @draw()
             @updateHook()
@@ -328,6 +371,8 @@ class Canvas
             if @drawIteration
                 if @dragging
                     offset = new Complex((-@dragging.dx+@dragging.ox)/@zoom, -(-@dragging.dy+@dragging.oy)/@zoom)
+                    if @flip
+                        offset.i *= -1
                     @dragging.pos = @mouse.add(offset)
                     if @restrictToReal
                         @dragging.pos.i = 0
@@ -398,19 +443,31 @@ class Canvas
 
     toWorld: (x, y) ->
         r = (x-@width/2)/@zoom+@center.r
-        i = -(y-@height/2)/@zoom+@center.i
+        if @flip
+            i = (y-@height/2)/@zoom+@center.i
+        else
+            i = -(y-@height/2)/@zoom+@center.i
         new Complex(r, i)
     fromWorld: (c) ->
         x = (c.r-@center.r)*@zoom+@width/2
-        y = -(c.i-@center.i)*@zoom+@height/2
+        if @flip
+            y = (c.i-@center.i)*@zoom+@height/2
+        else
+            y = -(c.i-@center.i)*@zoom+@height/2
         return [x, y]
     toMinimap: (x, y) ->
         r = (x-@width/(4*2))/(@width/(4.2*4))
-        i = -(y-@height/(4*2))/(@height/(4.2*4))
+        if @flip
+            i = (y-@height/(4*2))/(@height/(4.2*4))
+        else
+            i = -(y-@height/(4*2))/(@height/(4.2*4))
         new Complex(r, i)
     fromMinimap: (c) ->
         x = c.r*(@width/(4.2*4))+@width/(4*2)
-        y = -c.i*(@height/(4.2*4))+@height/(4*2)
+        if @flip
+            y = c.i*(@height/(4.2*4))+@height/(4*2)
+        else
+            y = -c.i*(@height/(4.2*4))+@height/(4*2)
         return [x, y]
     mouseOverMarker: (marker) ->
         [x, y] = @fromWorld(marker.pos)
@@ -781,7 +838,7 @@ class Canvas
 
                     @bunny.pos = z2
 
-                    if z2.r*z2.r + z2.i*z2.i > 4
+                    if @fractal.abort(z2)
                         break
 
             for marker in @markers
@@ -791,13 +848,17 @@ class Canvas
                 #@fg.arc(x, y, 5, 0, 2*Math.PI, false)
                 #@fg.fill()
                 i = Images.get(marker.name)
-                @fg.drawImage(i, x-marker.ox, y-marker.oy)
+                if marker.name == "bunny.png"
+                    scale = 1-(0.7/100)*@depth
+                    @fg.drawImage(i, x-marker.ox*scale, y-marker.oy*scale, Images.get("bunny.png").width*scale, Images.get("bunny.png").height*scale)
+                else
+                    @fg.drawImage(i, x-marker.ox, y-marker.oy)
         if @drawSlider
             w = @slider.canvas.clientWidth
             h = @slider.canvas.clientHeight
             for x in [0..w-1]
                 for y in [0..h-1]
-                    step = Math.floor(x/w*(@maxDepth+1))
+                    step = Math.floor(x/w*(@depth+1))
                     if step > @depth-1
                         step = -1
                     @slider.fillStyle = @palette.color(step).string()
@@ -805,11 +866,7 @@ class Canvas
             d = @fractal.iterate(@flag.pos, @depth)
             if d == -1
                 d = @depth
-            console.log(d)
-            console.log(d+0.5)
-            console.log((w/(@maxDepth+1)))
-            console.log((d+0.5)*(w/(@maxDepth+1)))
-            x = (d+0.5)*(w/(@maxDepth+1))
+            x = (d+0.5)*(w/(@depth+1))
             @slider.drawImage(Images.get("bunny.png"), x-Images.get("bunny.png").width/2, h/2-Images.get("bunny.png").height/2)
 
 Images.onload = ->
@@ -829,7 +886,7 @@ Images.onload = ->
                 canvas.zoomControls = true
                 canvas.zoomHook = (level) ->
                     if level == 0
-                        sentence = "You didn't zoom in yet. Come on, try it! :)"
+                        sentence = "You didn't zoom in yet. Try it! :)"
                     else
                         sentence = "So you just zoomed in "+level+" "
                         if level == 1
@@ -857,6 +914,7 @@ Images.onload = ->
             when "complex"
                 canvas.drawFractal = false
                 canvas.depth = 0
+                canvas.maxDepth = 0
                 c = document.getElementById("c")
                 canvas.updateHook = ->
                     c.innerHTML = demos["complex"].flag.pos.string()
@@ -877,12 +935,11 @@ Images.onload = ->
                     [x, y] = canvas.fromWorld(new Complex(0,0))
                     [x2, y2] = canvas.fromWorld(canvas.bunny.pos)
                     a = Math.atan2(x-x2, y-y2)
-                    console.log(a)
                     canvas.fg.arc(x, y, @zoom/2, 0, a, false)
     #    @fg.arc(ox, oy, 1*@zoom, 0, 2*Math.PI, false)
             when "step"
                 canvas.drawFractal = false
-                canvas.depth = 0
+                canvas.depth = 1.5
                 canvas.maxDepth = 2
                 canvas.halfSteps = true
                 canvas.fractal = new Steps()
@@ -916,13 +973,14 @@ Images.onload = ->
             when "scribble"
                 canvas.drawFractal = false
                 canvas.drawTrace = true
-                canvas.maxDepth = 10
+                canvas.maxDepth = 100
                 canvas.palette = new Palette("bw")
                 canvas.stepControls = true
             when "color"
                 canvas.drawFractal = false
                 canvas.drawTrace = true
-                canvas.maxDepth = 10
+                canvas.depth = 10
+                canvas.maxDepth = 100
                 canvas.traceSize = 20
                 canvas.palette = new Palette("colordemo")
                 canvas.stepControls = true
@@ -934,6 +992,31 @@ Images.onload = ->
                 canvas.palette = new Palette("rainbow")
                 canvas.drawAxes = false
                 canvas.drawSlider = true
+            when "exp"
+                canvas.zoomControls = true
+                canvas.stepControls = true
+                canvas.maxDepth = 100
+                canvas.palette = new Palette("rainbow")
+                canvas.drawAxes = false
+                canvas.drawSlider = true
+                canvas.fractal = new Mandelbrot(6)
+            when "tricorn"
+                canvas.zoomControls = true
+                canvas.stepControls = true
+                canvas.maxDepth = 100
+                canvas.palette = new Palette("rainbow")
+                canvas.drawAxes = false
+                canvas.drawSlider = true
+                canvas.fractal = new Tricorn()
+            when "ship"
+                canvas.zoomControls = true
+                canvas.stepControls = true
+                canvas.maxDepth = 100
+                canvas.palette = new Palette("rainbow")
+                canvas.drawAxes = false
+                canvas.drawSlider = true
+                canvas.flip = true
+                canvas.fractal = new BurningShip()
             when "sandbox"
                 canvas.zoomControls = true
                 canvas.stepControls = true
