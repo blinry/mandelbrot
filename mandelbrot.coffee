@@ -77,11 +77,12 @@ class Mandelbrot
             if q*(q+(c.r-0.25)) < 0.25*c.i*c.i
                 return -1
 
-        for i in [0..steps]
-            z = @step(z, c)
+        if steps > 0
+            for i in [0..steps-1]
+                z = @step(z, c)
 
-            if z.r*z.r+z.i*z.i > 4
-                return i
+                if z.r*z.r+z.i*z.i > 4
+                    return i
         return -1
 
 class Steps
@@ -158,10 +159,10 @@ class Canvas
         @drawFractal = true
         @drawAxes = true
         @drawIteration = true
-        #@drawSlider = false
+        @drawSlider = false
         @restrictToReal = false
 
-        @depth = 100
+        @depth = undefined
         @maxDepth = 100
         @fractal = new Mandelbrot()
         @palette = new Palette("slider")
@@ -175,6 +176,8 @@ class Canvas
         @updateHook = ->
             # nop
     init: (id) ->
+        if not @depth
+            @depth = @maxDepth
         div = document.getElementById(id)
         #instructions = document.createElement("p")
         #instructions.innerHTML = "Do stuff!"
@@ -218,7 +221,7 @@ class Canvas
             # the first half-step does nothing
             if timeSlider.value == "0.5"
                 timeSlider.value = "0"
-            @depth = timeSlider.value
+            @depth = parseInt(timeSlider.value)
             stepCounter.innerHTML = "Step "+@depth+"/"+@maxDepth
             @draw()
             @updateHook()
@@ -255,7 +258,9 @@ class Canvas
             #topControls.appendChild(zoomOutButton)
         if @stepControls
             bottomControls.appendChild(timeSlider)
+        if @drawSlider
             bottomControls.appendChild(sliderCanvas)
+        if @stepControls
             bottomControls.appendChild(stepCounter)
         layers.appendChild(@bgCanvas)
         layers.appendChild(@fgCanvas)
@@ -787,20 +792,25 @@ class Canvas
                 #@fg.fill()
                 i = Images.get(marker.name)
                 @fg.drawImage(i, x-marker.ox, y-marker.oy)
-        if @stepControls
+        if @drawSlider
             w = @slider.canvas.clientWidth
             h = @slider.canvas.clientHeight
             for x in [0..w-1]
                 for y in [0..h-1]
-                    step = Math.ceil(2*x/w*@maxDepth)/2
-                    if step > @depth
+                    step = Math.floor(x/w*(@maxDepth+1))
+                    if step > @depth-1
                         step = -1
                     @slider.fillStyle = @palette.color(step).string()
                     @slider.fillRect(x, 0, 1, h)
             d = @fractal.iterate(@flag.pos, @depth)
             if d == -1
                 d = @depth
-            @slider.drawImage(Images.get("bunny.png"), d*(w/@maxDepth)-20, 0)
+            console.log(d)
+            console.log(d+0.5)
+            console.log((w/(@maxDepth+1)))
+            console.log((d+0.5)*(w/(@maxDepth+1)))
+            x = (d+0.5)*(w/(@maxDepth+1))
+            @slider.drawImage(Images.get("bunny.png"), x-Images.get("bunny.png").width/2, h/2-Images.get("bunny.png").height/2)
 
 Images.onload = ->
     demoDivs = document.getElementsByClassName("demo")
@@ -916,157 +926,21 @@ Images.onload = ->
                 canvas.traceSize = 20
                 canvas.palette = new Palette("colordemo")
                 canvas.stepControls = true
-                #canvas.drawSlider = true
+                canvas.drawSlider = true
             when "explore"
                 canvas.zoomControls = true
                 canvas.stepControls = true
                 canvas.maxDepth = 100
                 canvas.palette = new Palette("rainbow")
                 canvas.drawAxes = false
-                #canvas.drawSlider = true
+                canvas.drawSlider = true
             when "sandbox"
                 canvas.zoomControls = true
                 canvas.stepControls = true
                 canvas.palette = new Palette("rainbow")
                 canvas.drawAxes = false
-                #canvas.drawSlider = true
+                canvas.drawSlider = true
         canvas.init(id)
-    ## plain
-    #zoomCount = 0
-
-    #plain = new Canvas("plain")
-    #plain.drawFractal()
-
-    #calcCount = ->
-
-
-    #calcCount()
-
-    #plain.click = (c) =>
-    #    plain.zoomIn(c)
-    #    zoomCount++
-    #    calcCount()
-    #    plain.drawFractal()
-
-    #document.getElementById("plain-reset").onclick = =>
-    #    plain.zoom = plain.width/4
-    #    plain.center = new Complex(0, 0)
-    #    zoomCount = 0
-    #    calcCount()
-    #    plain.drawFractal()
-
-    ## exp
-    #exp = new Canvas("exp")
-    #exp.draw()
-
-    #exp.click = (c) =>
-    #    exp.zoomIn(c)
-    #    exp.draw()
-
-    #document.getElementById("exp-reset").onclick = =>
-    #    exp.zoom = exp.width/4
-    #    exp.center = new Complex(0, 0)
-    #    exp.draw()
-    #exp.move = (c) =>
-    #    exp.drawIteration()
-
-    #expExp = document.getElementById("exp-exp")
-    #expExp.oninput = =>
-    #    exp.fractal.exp = expExp.value
-    #    exp.draw()
-
-    ## real
-    #real = new Canvas("real")
-    #real.drawReal()
-    #real.move = (c) =>
-    #    real.drawReal()
-
-    ## complex
-    #complex = new Canvas("complex")
-    #complex.drawComplex()
-    #complex.move = (c) =>
-    #    complex.drawComplex()
-
-    ## square
-    #square = new Canvas("square")
-    #square.drawSquare()
-    #square.move = (c) =>
-    #    square.drawSquare()
-
-    ## step
-    #step = new Canvas("step")
-    #step.drawStep()
-    #step.move = (c) =>
-    #    step.drawStep()
-
-    ## iteration
-    #iteration = new Canvas("iteration")
-    #iteration.drawIteration()
-    #iteration.move = (c) =>
-    #    iteration.drawIteration()
-
-    ## scribble
-    #scribble = new Canvas("scribble")
-    #scribble.fractal.palette = new Palette("bw")
-    #scribble.drawIteration()
-    #scribble.drawBorder()
-    #scribble.move = (c) =>
-    #    scribble.addPoint(c, 5)
-    #    scribble.drawIteration()
-    #    scribble.drawBorder()
-    #document.getElementById("scribble-reset").onclick = =>
-    #    scribble.clearBg()
-
-    ## color
-    #color = new Canvas("color")
-    #color.fractal.palette = new Palette("colordemo")
-    #color.drawIteration()
-    #color.drawBorder()
-    #color.move = (c) =>
-    #    color.addPoint(c, 10)
-    #    color.drawIteration()
-    #    color.drawBorder()
-    #document.getElementById("color-reset").onclick = =>
-    #    color.clearBg()
-
-    ## zoomiter
-    #zoomiter = new Canvas("zoomiter")
-    #zoomiter.drawFractal()
-    #zoomiter.drawIteration()
-    #zoomiter.click = (c) =>
-    #    zoomiter.zoomIn(c)
-    #    zoomiter.drawFractal()
-    #    zoomiter.drawIteration()
-    #zoomiter.middleClick = (c) =>
-    #    zoomiter.zoomOut(c)
-    #    zoomiter.drawFractal()
-    #    zoomiter.drawIteration()
-    #zoomiter.move = (c) =>
-    #    zoomiter.drawIteration()
-    #document.getElementById("zoomiter-reset").onclick = =>
-    #    zoomiter.zoom = zoomiter.width/4
-    #    zoomiter.center = new Complex(0, 0)
-    #    zoomiter.draw()
-
-    ## sandbox
-    #sandbox = new Canvas("sandbox")
-    #sandbox.draw()
-
-    ##sandbox.click = (c) =>
-    ##    sandbox.zoomIn(c)
-    ##    sandbox.draw()
-
-    #document.getElementById("sandbox-reset").onclick = =>
-    #    sandbox.zoom = sandbox.width/4
-    #    sandbox.center = new Complex(0, 0)
-    #    sandbox.draw()
-    #document.getElementById("sandbox-slider").oninput = ->
-    #    sandbox.depth = this.value
-    #    sandbox.drawIteration()
-    #    sandbox.drawMarkers()
-    #sandbox.move = (c) =>
-    #    sandbox.drawIteration()
-    #    sandbox.drawMarkers()
 
 Images.load([
     "bunny.png"

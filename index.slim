@@ -6,6 +6,18 @@ html
         script src="mandelbrot.js"
     body
         h1 A Hitchhiker's Guide to the Mandelbrot Set
+        div.meta
+            | 2017-02-21 / 
+            a href="https://morr.cc"
+                | Sebastian Morr
+            |  / CC BY-NC-SA 4.0
+
+        p
+            em
+                | This is a work-in-progress. Send feedback to 
+                a href="https://twitter.com/blinry"
+                    | @blinry
+                |  or to <span>s<span title="ihate@spam.com&lt;/span&gt;">e</span>bastian</span>@morr<i title="&lt;/i&gt;mailto:">.</i>cc.
 
         p Maybe you've seen an image of the Mandelbrot Set before. It's trippy, it's wonderous, it's beautiful. Here it is, have a look:
         p.instruction Click to zoom.
@@ -63,8 +75,7 @@ html
         .demo#fullsteps
 
         p And NOW it gets exciting! What if we let our bunny do many, many, steps? Like, 100 of them? Look:
-        p.instruction Pull the slider to Step 100, then drag the flag around.
-        p.instruction Can you find a spiral? A star? A triangle?
+        p.instruction Pull the slider to Step 100, then drag the flag around.<br>Can you find a spiral? A star? A triangle?
         .demo#iteration
 
         p Whaaaat. Crazy patterns everywhere!
@@ -83,17 +94,16 @@ html
         p And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.
 
         p Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.
-        p.instruction Click to zoom. Middle-click to zoom out.
-
-        #explore.demo
-
-        p Some fun things you can try:
+        p Some things you can try:
 
         ul
             li What happens to the path at the centers of the outer "bulbs"?
             li Can you find out which period numbers are connected to each bulb? Do you see a relation to the "antennas" extending outward from that bulb?</li
             li Zoom in on one of the bulbs. What happens to the path at the centers of its sub-bulbs?
             li What is the period of the bulbs going "outward"? What happens if you follow a number of them?
+        p.instruction Click to zoom. Middle-click to zoom out.
+
+        #explore.demo
 
         /<p>(HERE BE DRAGONS) Lorem ipsum Mandelbrot sit amet!</p
             | <div class="example"
