@@ -132,14 +132,19 @@ class Palette
         # nop
     color: (i) ->
         if i == -1
-            return new Color(0, 0, 0, 1)
+            if @name == "slider"
+                return new Color(0, 0, 80, 1)
+            else
+                return new Color(0, 0, 0, 1)
         switch @name
             when "gray"
                 return new Color(0, 0, (i*2).mod(360), 1)
             when "rainbow"
-                return new Color((i*10).mod(360), 80, 60, 1)
+                return new Color((i*4).mod(360), 80, 60, 1)
             when "bw"
                 return new Color(0, 100, 100, 1)
+            when "slider"
+                return new Color(0, 0, 70, 1)
             when "zebra"
                 return new Color(i.mod(2)*180+90, 100, 40, 1)
             when "colordemo"
@@ -153,14 +158,14 @@ class Canvas
         @drawFractal = true
         @drawAxes = true
         @drawIteration = true
-        @drawSlider = false
+        #@drawSlider = false
         @restrictToReal = false
 
         @depth = 100
         @maxDepth = 100
         @fractal = new Mandelbrot()
-        @palette = new Palette("gray")
-        @traceSize = 5
+        @palette = new Palette("slider")
+        @traceSize = 10
 
         @zoomControls = false
         @stepControls = false
@@ -184,7 +189,7 @@ class Canvas
         @fgCanvas = @bgCanvas.cloneNode()
 
         resetButton = document.createElement("button")
-        resetButton.innerHTML = "Reset"
+        resetButton.innerHTML = "Reset zoom"
         resetButton.onclick = =>
             @zoomReset()
 
@@ -220,10 +225,25 @@ class Canvas
         timeSlider.onchange = =>
             @draw(true)
 
-        paletteCanvas = document.createElement("canvas")
-        paletteCanvas.setAttribute("width", @width)
-        paletteCanvas.setAttribute("height", 20)
-        paletteCanvas.setAttribute("style", "width: "+@width+" height: "+20+" ")
+        sliderCanvas = document.createElement("canvas")
+        sliderCanvas.setAttribute("width", @width)
+        sliderCanvas.setAttribute("height", 40)
+        sliderCanvas.setAttribute("style", "width: "+@width+" height: "+20+" ")
+        #@sliderMouseDown = false
+        #sliderCanvas.onmousedown = (event) =>
+        #    @sliderMouseDown = true
+        #sliderCanvas.onmouseup = (event) =>
+        #    @sliderMouseDown = false
+        #sliderCanvas.onmouseleave = (event) =>
+        #    @sliderMouseDown = false
+        #sliderCanvas.onmousemove = (event) =>
+        #    if @sliderMouseDown
+        #        rect = sliderCanvas.getBoundingClientRect()
+        #        x = event.clientX-rect.left
+        #        @depth = Math.round(2*x/@width*@maxDepth)/2
+        #        stepCounter.innerHTML = "Step "+@depth+"/"+@maxDepth
+        #        @draw(true)
+        #        @updateHook()
 
         #div.appendChild(instructions)
         div.appendChild(topControls)
@@ -235,14 +255,14 @@ class Canvas
             #topControls.appendChild(zoomOutButton)
         if @stepControls
             bottomControls.appendChild(timeSlider)
+            bottomControls.appendChild(sliderCanvas)
             bottomControls.appendChild(stepCounter)
-            bottomControls.appendChild(paletteCanvas)
         layers.appendChild(@bgCanvas)
         layers.appendChild(@fgCanvas)
 
         @bg = @bgCanvas.getContext("2d")
         @fg = @fgCanvas.getContext("2d")
-        @slider = paletteCanvas.getContext("2d")
+        @slider = sliderCanvas.getContext("2d")
 
         @data = @bg.getImageData(0, 0, @width, @height)
 
@@ -291,6 +311,11 @@ class Canvas
                 else if @zoomControls
                     @zoomIn(@mouse)
                 @fgCanvas.style.cursor = "auto"
+            else if event.which == 2 # middle
+                if @zoomControls
+                    @zoomOut(@mouse)
+
+        @fgCanvas.onmouseleave = @fgCanvas.onmouseup
 
         @fgCanvas.onmousemove = (event) =>
             rect = @fgCanvas.getBoundingClientRect()
@@ -322,7 +347,7 @@ class Canvas
                             if xx >= 0 and xx < @width and yy >= 0 and yy < @height
                                 offset = (@width*yy+xx)*4
                                 cc = @toWorld(xx, yy)
-                                i = @fractal.iterate(cc, 20)
+                                i = @fractal.iterate(cc, @depth)
                                 col = @palette.color(i)
                                 [r,g,b,a] = col.rgba()
                                 @data.data[offset++] = r
@@ -649,6 +674,7 @@ class Canvas
             @fg.lineTo(ox, y2)
             @fg.stroke()
 
+            @fg.strokeStyle = "#666"
             @fg.setLineDash([5, 5])
 
             #@fg.beginPath()
@@ -685,22 +711,25 @@ class Canvas
             @fg.font = "20px sans-serif"
             @fg.fillStyle = "black"
 
-            [x, y] = @fromWorld(new Complex(1,0))
-            @fg.fillText("1", x, y)
-            [x, y] = @fromWorld(new Complex(-1,0))
-            @fg.fillText("-1", x, y)
-            [x, y] = @fromWorld(new Complex(0,1))
-            @fg.fillText("1", x, y)
-            [x, y] = @fromWorld(new Complex(0,-1))
-            @fg.fillText("-1", x, y)
-            [x, y] = @fromWorld(new Complex(2,0))
-            @fg.fillText("2", x, y)
             [x, y] = @fromWorld(new Complex(-2,0))
-            @fg.fillText("-2", x, y)
-            [x, y] = @fromWorld(new Complex(0,2))
-            @fg.fillText("2", x, y)
+            @fg.fillText("-2", x, y+20)
+            [x, y] = @fromWorld(new Complex(-1,0))
+            @fg.fillText("-1", x, y+20)
+            [x, y] = @fromWorld(new Complex(1,0))
+            @fg.fillText("1", x, y+20)
+            [x, y] = @fromWorld(new Complex(2,0))
+            @fg.fillText("2", x, y+20)
+
+            @fg.textAlign = "right"
+
             [x, y] = @fromWorld(new Complex(0,-2))
-            @fg.fillText("-2", x, y)
+            @fg.fillText("-2", x-5, y+8)
+            [x, y] = @fromWorld(new Complex(0,-1))
+            @fg.fillText("-1", x-5, y+8)
+            [x, y] = @fromWorld(new Complex(0,1))
+            @fg.fillText("1", x-5, y+8)
+            [x, y] = @fromWorld(new Complex(0,2))
+            @fg.fillText("2", x-5, y+8)
         if @drawIteration
             @fg.strokeStyle = "blue"
             @fg.lineWidth = 0.5
@@ -758,21 +787,20 @@ class Canvas
                 #@fg.fill()
                 i = Images.get(marker.name)
                 @fg.drawImage(i, x-marker.ox, y-marker.oy)
-        if @drawSlider
+        if @stepControls
             w = @slider.canvas.clientWidth
             h = @slider.canvas.clientHeight
             for x in [0..w-1]
                 for y in [0..h-1]
-                    step = Math.round(x/w*@maxDepth)
+                    step = Math.ceil(2*x/w*@maxDepth)/2
                     if step > @depth
-                        @slider.fillStyle = "black"
-                    else
-                        @slider.fillStyle = @palette.color(step).string()
+                        step = -1
+                    @slider.fillStyle = @palette.color(step).string()
                     @slider.fillRect(x, 0, 1, h)
             d = @fractal.iterate(@flag.pos, @depth)
             if d == -1
                 d = @depth
-            @slider.drawImage(Images.get("bunny.png"), d*(w/@maxDepth)-20, -5)
+            @slider.drawImage(Images.get("bunny.png"), d*(w/@maxDepth)-20, 0)
 
 Images.onload = ->
     demoDivs = document.getElementsByClassName("demo")
@@ -822,7 +850,6 @@ Images.onload = ->
                 c = document.getElementById("c")
                 canvas.updateHook = ->
                     c.innerHTML = demos["complex"].flag.pos.string()
-                    console.log(demos["complex"].flag.pos.string())
             when "walk"
                 canvas.drawFractal = false
                 canvas.depth = 0
@@ -836,6 +863,13 @@ Images.onload = ->
                 canvas.halfSteps = true
                 canvas.fractal = new Steps()
                 canvas.stepControls = true
+                canvas.updateHook = ->
+                    [x, y] = canvas.fromWorld(new Complex(0,0))
+                    [x2, y2] = canvas.fromWorld(canvas.bunny.pos)
+                    a = Math.atan2(x-x2, y-y2)
+                    console.log(a)
+                    canvas.fg.arc(x, y, @zoom/2, 0, a, false)
+    #    @fg.arc(ox, oy, 1*@zoom, 0, 2*Math.PI, false)
             when "step"
                 canvas.drawFractal = false
                 canvas.depth = 0
@@ -879,16 +913,23 @@ Images.onload = ->
                 canvas.drawFractal = false
                 canvas.drawTrace = true
                 canvas.maxDepth = 10
-                canvas.traceSize = 15
+                canvas.traceSize = 20
                 canvas.palette = new Palette("colordemo")
                 canvas.stepControls = true
-                canvas.drawSlider = true
+                #canvas.drawSlider = true
+            when "explore"
+                canvas.zoomControls = true
+                canvas.stepControls = true
+                canvas.maxDepth = 100
+                canvas.palette = new Palette("rainbow")
+                canvas.drawAxes = false
+                #canvas.drawSlider = true
             when "sandbox"
                 canvas.zoomControls = true
                 canvas.stepControls = true
                 canvas.palette = new Palette("rainbow")
                 canvas.drawAxes = false
-                canvas.drawSlider = true
+                #canvas.drawSlider = true
         canvas.init(id)
     ## plain
     #zoomCount = 0

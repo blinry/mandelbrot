@@ -24,15 +24,14 @@ html
             p I'll attempt to explain to you how this works in a purely visual way, without any math. If the math interests you, you can read up on this in the gray columns, but this is purely optional!
             p In our little world, there is a bunny, and a flag. You can place the flag everywhere you want. The bunny has its own free will. Psssst, it's still asleep! ... z z Z Z Z
         .right
-            p The flag actually represents something which mathematicians call a <em>complex number</em>. It's just like a normal number, but is has a funny little extra number attached to it, which tells you how far it is above or below the number line. Mathematicians call this the number's <em>imaginary component</em>, and mark it with an <em>i</em>. For example, in the demo below, c = <span id="c">?</span>. Try placing the flag on -1.0+0.5i!
+            p The flag actually represents something which mathematicians call a <em>complex number</em>. It's just like a normal number, but is has a funny little extra number attached to it, which tells you how far it is above or below the number line. Mathematicians call this the number's <em>imaginary component</em>, and mark it with an <em>i</em>. For example, in the demo below, f = <span id="c">?</span>. Try placing the flag on -1.0+0.5i!
         p.instruction Drag the flag around. No surprises here.
         .demo#complex
 
         .left
             p The bunny always sleeps in the center of the lawn. But look, it bunny woke up! It will now start to walk and hop around. The first thing it will always do is <strong>walk</strong> to the position of the flag. We call this movement <em>Step 1</em>.
         .right
-            /p The bunny will follow a path described by a series of complex numbers, <em>z_0, z_1, z_2</em>, and so on. The first two numbers are z_0 = 0 and z_1 = c.
-            p The bunny starts at <em>z_0 = 0</em>. The <strong>walk</strong> movement is equivalent to adding <em>c</em>, so the next position will be <em>z_1 = z_0+c = c</em>.
+            p The bunny starts at <em>b<sub>0</sub> = 0</em>. The <strong>walk</strong> movement is equivalent to adding <em>c</em>, so the next position will be <em>b<sub>1</sub> = b<sub>0</sub>+f = c</em>.
         p.instruction Pull the slider to Step 1, then drag the flag around.
         .demo#walk
 
@@ -47,7 +46,7 @@ html
         .left
             p The second movement of Step 2 is another <strong>walk</strong> movement. The bunny will walk in the same direction and distance as it initially walked towards the flag:
         .right
-            p After squaring <em>z_1</em>, we add c again. Together, <em>z_2 = z_1^2+c</em>.
+            p After squaring <em>b<sub>1</sub></em>, we add c again. Together, <em>b<sub>2</sub> = b<sub>1</sub><sup>2</sup>+f</em>.
         .demo#step
 
         .left
@@ -60,7 +59,7 @@ html
             p Now, let's get rid of the half-steps! From now on, we will treat the hopping-and-walking as a single movement.
             p Here's the same demo as before, but the the bunny directly goes full steps. The flag positions of this and the last demo are in sync, so you can compare how this works.
         .right
-            p If we want to calculate the new position <em>z_{i+1}</em>, and we know the old position <em>z_i</em>, we can calculate <em>z_{i+1} = z_i^2+c</em>.
+            p If we want to calculate the new position <em>b<sub>i+1</sub></em>, and we know the old position <em>b<sub>i</sub></em>, we can calculate <em>b<sub>i+1</sub> = b<sub>i</sub><sup>2</sup>+f</em>.
         .demo#fullsteps
 
         p And NOW it gets exciting! What if we let our bunny do many, many, steps? Like, 100 of them? Look:
@@ -83,38 +82,24 @@ html
 
         p And that's all there is to it! Repeated application of a very simple rule, leading to incredibly complex detail.
 
-        /h2 Part 3: Which variations exist?
+        p Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.
+        p.instruction Click to zoom. Middle-click to zoom out.
 
-        /
-            | <p>Here's the last demo for now, which does all the drawing for you, and where you can zoom in. This one has a lot to explore.</p
+        #explore.demo
 
-            | <div class="example"
-            | <p>Click to zoom. Middle-click to zoom out. <button type="button" id="zoomiter-reset">Reset</button></p
-            | <canvas id="zoomiter"
-            | </div
+        p Some fun things you can try:
 
-            | <p>Some fun things you can try:</p
+        ul
+            li What happens to the path at the centers of the outer "bulbs"?
+            li Can you find out which period numbers are connected to each bulb? Do you see a relation to the "antennas" extending outward from that bulb?</li
+            li Zoom in on one of the bulbs. What happens to the path at the centers of its sub-bulbs?
+            li What is the period of the bulbs going "outward"? What happens if you follow a number of them?
 
-            | <ul
-            | <li>What happens to the path at the centers of the outer "bulbs"?</li
-            | <li>Can you find out which period numbers are connected to each bulb? Do you see a relation to the "antennas" extending outward from that bulb?</li
-            | <li>Zoom in on one of the bulbs. What happens to the path at the centers of its sub-bulbs?</li
-            | <li>What is the period of the bulbs going "outward"? What happens if you follow a number of them?</li
-            | </ul
-
-            | <p>(HERE BE DRAGONS) Lorem ipsum Mandelbrot sit amet!</p
-
-
-
-
-
-
-
-
+        /<p>(HERE BE DRAGONS) Lorem ipsum Mandelbrot sit amet!</p
             | <div class="example"
             | <p>Click to zoom</p
             | <button type="button" id="exp-reset">Reset</button
-            | <span>f_c(z) = z^n+c, where n =</span> <span>0</span><input type="range" id="exp-exp" min="0" max="5" value="2" step="0.1"><span>5</span
+            | <span>f_c(z) = z^n+f, where n =</span> <span>0</span><input type="range" id="exp-exp" min="0" max="5" value="2" step="0.1"><span>5</span
             | <canvas id="exp"
             | </div
 
@@ -127,8 +112,8 @@ html
         /    | <p>Click to zoom</p
         /    | <button type="button" id="sandbox-reset">Reset</button
         /    | <select id="sandbox-f"
-        /    | <option value="z^2+c">z^2+c</option
-        /    | <option value="(z*)^2+c">(z*)^2+c</option
+        /    | <option value="z^2+f">z^2+f</option
+        /    | <option value="(z*)^2+f">(z*)^2+f</option
         /    | </select
         /    | <canvas id="sandbox"></canvas
         /    | <input type="range" id="sandbox-slider" min="0" max="50" value="5" style="width: 800px"
