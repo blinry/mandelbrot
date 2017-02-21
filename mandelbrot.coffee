@@ -317,7 +317,7 @@ class Canvas
         @mouse = new Complex(0,0)
 
         # markers
-        @flag = new Marker(new Complex(0.3,-0.3), "flag.png", new Color(90, 80, 50, 1))
+        @flag = new Marker(new Complex(0.36,-0.36), "flag.png", new Color(90, 80, 50, 1))
         if @restrictToReal
             @flag.pos.i = 0
         @flag.draggable = true
@@ -363,7 +363,9 @@ class Canvas
                 if @zoomControls
                     @zoomOut(@mouse)
 
-        @fgCanvas.onmouseleave = @fgCanvas.onmouseup
+        @fgCanvas.onmouseleave = (event) =>
+            @mousedown = false
+            @dragging = undefined
 
         @fgCanvas.onmousemove = (event) =>
             rect = @fgCanvas.getBoundingClientRect()
